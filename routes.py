@@ -1,8 +1,7 @@
 from flask import Flask
 from flask import request
+import json
 from services import download_youtube_service, upload_service
-import os
-import uuid
 
 app = Flask(__name__)
 
@@ -21,14 +20,28 @@ def download_video():
         return "Link video not specified"
     link = data['link']
     if download_youtube_service.download(link) == True:
-        return "Finish uploading"
+        return {
+            "success": True,
+            "error": None
+        }
+    return {
+        'success': False,
+        'error': "Video can't download"
+    }
+
 
 @app.route("/upload", methods=['POST', 'PUT'])
 def upload_video():
     data = request.data
-    upload_service.upload(data)
-
-    return "Success upload"
+    if upload_service.upload(data) == True:
+        return {
+            "success": True,
+            "error": None
+        }
+    return {
+        "success": False,
+        "error": "Video can't upload"
+    }
 
 
 
