@@ -1,7 +1,9 @@
-import subprocess
+import youtube_dl
+
+dls_opt = {}
 
 
 def download(link: str):
-    args = ["youtube-dl", link]
-    subprocess.run(args)
-    return "Success"
+    with youtube_dl.YoutubeDl(dls_opt) as ydl:
+        ydl.download([link])
+    return True

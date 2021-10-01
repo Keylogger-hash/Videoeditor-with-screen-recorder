@@ -20,8 +20,8 @@ def download_video():
     if data['link'] == None:
         return "Link video not specified"
     link = data['link']
-    download_youtube_service.download(link)
-    return "Finish uploading"
+    if download_youtube_service.download(link) == True:
+        return "Finish uploading"
 
 @app.route("/upload", methods=['POST', 'PUT'])
 def upload_video():
