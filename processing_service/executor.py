@@ -5,8 +5,8 @@ from queue import Queue
 from concurrent.futures import ThreadPoolExecutor, Future
 from functools import partial
 from threading import Event
-from processing_service.common import IPCType, IPCMessage, TaskStatus
-from processing_service.ffwrap import convert_file
+from common import IPCType, IPCMessage, TaskStatus
+from ffwrap import convert_file
 
 class FFmpegThreadExecutor(object):
     def __init__(self, datastream: Queue, workers_queue: int=3) -> None:

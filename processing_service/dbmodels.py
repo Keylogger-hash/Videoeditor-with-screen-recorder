@@ -1,5 +1,5 @@
 from sqlalchemy import MetaData, Table, Column, String, Integer
-from processing_service.common import TaskStatus
+from common import TaskStatus
 metadata = MetaData()
 
 videos = Table('videos', metadata,

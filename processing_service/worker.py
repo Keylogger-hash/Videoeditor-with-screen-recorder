@@ -7,9 +7,9 @@ from concurrent.futures import Future
 from threading import Event, Thread
 from queue import Queue
 from sqlalchemy import create_engine
-from processing_service.executor import FFmpegThreadExecutor
-from processing_service.common import IPCMessage, IPCType, TaskStatus
-from processing_service.dbmodels import videos
+from executor import FFmpegThreadExecutor
+from common import IPCMessage, IPCType, TaskStatus
+from dbmodels import videos
 
 class WorkerTask(object):
     __slots__ = ['output_filename', 'deferred_task', 'progress', 'status']
@@ -152,3 +152,7 @@ def start_server(address: str, tasks_limit: int) -> None:
                     sock.send(json.dumps({'ok': True, 'data': reply}).encode('utf-8'))
                 except Exception as e:
                     sock.send(json.dumps({'ok': False, 'error': str(e)}).encode('utf-8'))
+
+
+if __name__ == "__main__":
+    start_server("tcp://127.0.0.1:5555", 10)
