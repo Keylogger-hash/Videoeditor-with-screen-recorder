@@ -4,13 +4,15 @@ import json
 import os
 import zmq
 import typing
+import datetime
 from concurrent.futures import Future
 from threading import Event, Thread
 from queue import Queue, Empty as QueueIsEmpty
 from sqlalchemy import create_engine
 from processing_service.executor import FFmpegThreadExecutor
 from processing_service.common import IPCMessage, IPCType, TaskStatus
-from datamodel import videos
+from processing_service.paths import UPLOADS_LOCATION, CUTS_LOCATION
+from database.datamodel import videos
 
 WORKER_IPC_POLL = 10000
 EXTERNAL_IPC_POLL = 10000
@@ -21,7 +23,7 @@ class WorkerTask(object):
         self.output_filename = output_filename # type: str
         self.deferred_task = deferred_task # type: Future
         self.progress = 0 # type: float
-        self.status = TaskStatus.WAITING # type: TaskStatus
+        self.status = TaskStatus.QUEUED # type: TaskStatus
 
 class ProcessingWorker(Thread):
     def __init__(self, task_limit: int) -> None:
@@ -34,6 +36,7 @@ class ProcessingWorker(Thread):
     def add_task(self, input_filename: str, output_filename: str, start_at: int, end_at: int) -> None:
         if output_filename in self.tasks:
             raise KeyError('Output file is queued already')
+        self.on_status_changed(output_filename, TaskStatus.QUEUED)
         future = self.ffmpeg_executor.submit(input_filename, output_filename, start_at, end_at)
         self.tasks[output_filename] = WorkerTask(output_filename, future)
 
@@ -97,8 +100,13 @@ class DatabaseProcessingWorker(ProcessingWorker):
         self.dbe = create_engine(database_url)
 
     def on_status_changed(self, subject, status):
+        extra_changes = {}
+        if status == TaskStatus.WORKING:
+            extra_changes['task_begin'] = datetime.datetime.now()
+        elif status in (TaskStatus.COMPLETED, TaskStatus.FAILED):
+            extra_changes['task_end'] = datetime.datetime.now()
         self.dbe.execute(
-            videos.update().where(videos.c.output_filename == subject).values(status=status.value)
+            videos.update().where(videos.c.output_filename == subject).values(status=status.value, ** extra_changes)
         )
 
     def on_progress(self, subject, value):
@@ -132,10 +140,8 @@ def start_server(address: str, worker: ProcessingWorker) -> None:
                     elif request['method'] == 'cut':
                         if (request['startAt'] < 0) or (request['endAt'] < 0) or (request['startAt'] > request['endAt']):
                             raise ValueError('Incorrect range')
-                        if not os.path.isfile(request['input']):
+                        if not os.path.isfile(os.path.join(UPLOADS_LOCATION, request['input'])):
                             raise IOError('Source not found')
-                        if not os.path.isdir(os.path.dirname(request['output'])):
-                            raise IOError('Output location not found')
                         worker.add_task(
                             request['input'],
                             request['output'],

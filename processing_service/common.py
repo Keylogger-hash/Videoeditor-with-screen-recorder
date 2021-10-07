@@ -2,10 +2,11 @@ from enum import IntEnum
 import typing
 
 class TaskStatus(IntEnum):
-    WAITING = 0
-    WORKING = 1
-    COMPLETED = 2
-    FAILED = 3
+    INACTIVE = 0
+    QUEUED = 1
+    WORKING = 2
+    COMPLETED = 3
+    FAILED = 4
 
 class IPCType(IntEnum):
     ADD = 0

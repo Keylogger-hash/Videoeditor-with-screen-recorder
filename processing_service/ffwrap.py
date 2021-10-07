@@ -15,12 +15,12 @@ def parsetime(text: str) -> float:
 
 def convert_file(input_file: str, output_file: str, start_at: int, end_at: int, fire_exit: t.Optional[Event]=None, progress_callback=None, start_callback=None) -> t.Optional[int]:
     try:
+        if start_callback is not None:
+            start_callback()
         total_duration = float(FFprobe().input(input_file).options(select_streams='v:0', show_entries='format=duration').json()['format']['duration'])
         if end_at > total_duration:
             return ERROR_INCORRECT_ARGUMENTS
         duration = end_at - start_at #
-        if start_callback is not None:
-            start_callback()
         proc = FFmpeg().\
             global_args('-y', '-v', 'error', '-progress', '-').\
             input(input_file).\
