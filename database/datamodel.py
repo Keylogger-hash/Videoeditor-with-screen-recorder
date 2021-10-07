@@ -1,14 +1,16 @@
-import datetime
-import uuid
-from typing import List, Union, Tuple, Dict, Mapping, Any, Optional
-from sqlalchemy import Table, MetaData, Column, Integer, Numeric, String, Text, DateTime, Boolean, ForeignKeyConstraint
-from sqlalchemy.dialects.postgresql import UUID
-
+from sqlalchemy import MetaData, Table, Column, String, Integer
+from processing_service.common import TaskStatus
 metadata = MetaData()
 
-
-records = Table('records', metadata,
-    Column('video_id', UUID(as_uuid=True), nullable=False, primary_key=True),
-    Column('output_name', Text, nullable=True)
+videos = Table('videos', metadata,
+    Column('output_filename', String, nullable=False, primary_key=True),
+    Column('source', String, nullable=False),
+    Column('status', Integer, nullable=False, default=TaskStatus.WAITING),
+    Column('progress', Integer, default=0)
 )
 
+uploads = Table('source_videos', metadata,
+    Column('filename', String, nullable=False, primary_key=True),
+    Column('title', String, nullable=False),
+    Column('status', Integer, nullable=False)
+)

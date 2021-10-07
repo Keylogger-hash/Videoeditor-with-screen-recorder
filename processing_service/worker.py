@@ -1,15 +1,19 @@
 import logging
+import signal
 import json
 import os
 import zmq
 import typing
 from concurrent.futures import Future
 from threading import Event, Thread
-from queue import Queue
+from queue import Queue, Empty as QueueIsEmpty
 from sqlalchemy import create_engine
 from processing_service.executor import FFmpegThreadExecutor
 from processing_service.common import IPCMessage, IPCType, TaskStatus
-from processing_service.dbmodels import videos
+from datamodel import videos
+
+WORKER_IPC_POLL = 10000
+EXTERNAL_IPC_POLL = 10000
 
 class WorkerTask(object):
     __slots__ = ['output_filename', 'deferred_task', 'progress', 'status']
@@ -35,6 +39,7 @@ class ProcessingWorker(Thread):
 
     def stop_task(self, output_filename: str) -> None:
         self.ffmpeg_executor.stop_task(output_filename)
+        # NOTE: task will be deleted when executor stops thread
         # del self.tasks[output_filename]
 
     def get_task_info(self, output_filename: str) -> typing.Optional[WorkerTask]:
@@ -56,7 +61,10 @@ class ProcessingWorker(Thread):
 
     def run(self) -> None:
         while not self.exit_event.is_set():
-            message = self.tasks_datastream.get() # type: IPCMessage
+            try:
+                message = self.tasks_datastream.get(False, WORKER_IPC_POLL) # type: IPCMessage
+            except QueueIsEmpty:
+                continue
             logging.debug(str(message))
             if message.message_type == IPCType.PROGRESS:
                 if message.subject in self.tasks:
@@ -78,9 +86,10 @@ class ProcessingWorker(Thread):
         logging.info('Stopping worker')
 
     def shutdown(self) -> None:
-        self.exit_event.set()
-        self.ffmpeg_executor.shutdown()
-        logging.info('Force stop worker')
+        if not self.exit_event.is_set():
+            self.exit_event.set()
+            self.ffmpeg_executor.shutdown()
+            logging.info('Force stop worker')
 
 class DatabaseProcessingWorker(ProcessingWorker):
     def __init__(self, database_url, tasks_limit):
@@ -94,20 +103,25 @@ class DatabaseProcessingWorker(ProcessingWorker):
 
     def on_progress(self, subject, value):
         self.dbe.execute(
-            videos.update().where(videos.c.output_filename == subject).values(progress=value)
+            videos.update().where(videos.c.output_filename == subject).values(progress=int(value))
         )
 
-def start_server(address: str, tasks_limit: int) -> None:
+def start_server(address: str, worker: ProcessingWorker) -> None:
     quit_event = Event()
+    def signal_handler(*args):
+        print('Got SIGTERM')
+        quit_event.set()
+    signal.signal(signal.SIGTERM, signal_handler)
     ctx = zmq.Context()
-    worker = ProcessingWorker(tasks_limit)
+    logging.info('Starting processing worker...')
     worker.start()
     server_socket = ctx.socket(zmq.REP)
     server_socket.bind(address)
     poller = zmq.Poller()
     poller.register(server_socket, zmq.POLLIN)
+    logging.info('Starting server at %s...', address)
     while not quit_event.is_set():
-        socks = poller.poll(10000)
+        socks = poller.poll(EXTERNAL_IPC_POLL)
         if socks:
             for sock, _ in socks:
                 try:
@@ -152,3 +166,6 @@ def start_server(address: str, tasks_limit: int) -> None:
                     sock.send(json.dumps({'ok': True, 'data': reply}).encode('utf-8'))
                 except Exception as e:
                     sock.send(json.dumps({'ok': False, 'error': str(e)}).encode('utf-8'))
+    logging.info('Server stopped')
+    worker.shutdown()
+    logging.info('Worker stopped')
