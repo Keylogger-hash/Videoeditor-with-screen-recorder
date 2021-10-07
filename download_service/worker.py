@@ -62,6 +62,15 @@ def start_server(address: str, tasks_limit: int):
                     worker.add_task(request['link'])
                 elif request['method'] == 'cancel':
                     worker.stop(request['link'])
+                elif request['method'] == 'pause':
+                    pass
+                elif request['method'] == 'resume':
+                    pass
+                elif request['method'] == 'progress':
+                    pass
+                elif request['method'] == 'list_info':
+                    pass
+
                 else:
                     logging.info('Not implemented')
                 sock.send(json.dumps({'ok': True, 'data': reply}).encode('UTF-8'))

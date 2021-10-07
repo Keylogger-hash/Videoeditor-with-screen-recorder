@@ -4,6 +4,7 @@ import traceback
 from queue import Queue
 from youtubedl_wrap import download_video
 from concurrent.futures import ThreadPoolExecutor, Future
+from youtubedl_wrap import stop_download_video
 from common import IPCType, IPCMessage, TaskStatus
 from functools import partial
 from threading import Event
@@ -22,8 +23,7 @@ class YoutubeDlExecutor:
         del self.task_stoppers[link]
 
     def task_stop(self, link: str):
-        if link in self.task_stoppers:
-            self.task_stoppers[link].set()
+        stop_download_video(link)
 
     def submit(self, link: str):
         exit_event = Event()

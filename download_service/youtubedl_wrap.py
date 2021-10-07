@@ -1,12 +1,24 @@
-import youtube_dl
 from threading import Event
+from myyoutube_dl import YoutubeDl
+import subprocess
 
 dls_opt = {"ratelimit": 1000000000}
 
+youtubedl = YoutubeDl()
 
 
-def download_video(link: str, fire_exit: Event=None):
-    with youtube_dl.YoutubeDL(dls_opt) as ydl:
-        ydl.download([link])
+def download_video(link: str, fire_exit: Event=None, progress_callback=None):
+    proc = youtubedl.input(link).global_args().run()
+
+    while fire_exit is None or not fire_exit.is_set():
+        output = proc.stdout.readline()
+        print(output)
+        if output == b'' and proc.poll() is not None:
+            break
+
     if fire_exit is None or not fire_exit.is_set():
-        return True
+        return proc.poll()
+
+def stop_download_video(link: str, fire_exit: Event=None):
+    youtubedl.input(link).stop()
+
