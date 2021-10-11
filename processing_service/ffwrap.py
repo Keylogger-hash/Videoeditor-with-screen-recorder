@@ -7,24 +7,29 @@ ERROR_INCORRECT_ARGUMENTS = 500
 ERROR_PROBE_FAILED = 510
 ERROR_TASK_CANCELLED = 520
 
-TRANSCODING_SETTINGS = [] # type: t.List[str]
+TRANSCODING_SETTINGS = ['-c', 'copy', '-avoid_negative_ts', '1'] # type: t.List[str]
 
 def parsetime(text: str) -> float:
     s, ms = text.split('.')
     return int(s) * 1e6 + int(ms)
 
-def convert_file(input_file: str, output_file: str, start_at: int, end_at: int, fire_exit: t.Optional[Event]=None, progress_callback=None, start_callback=None) -> t.Optional[int]:
+def convert_file(input_file: str, output_file: str, start_at: int, end_at: int, keep_streams: str, fire_exit: t.Optional[Event]=None, progress_callback=None, start_callback=None) -> t.Optional[int]:
     try:
         if start_callback is not None:
             start_callback()
         total_duration = float(FFprobe().input(input_file).options(select_streams='v:0', show_entries='format=duration').json()['format']['duration'])
         if end_at > total_duration:
             return ERROR_INCORRECT_ARGUMENTS
-        duration = end_at - start_at #
+        duration = end_at - start_at
+        extra_options = []
+        if keep_streams == 'audio':
+            extra_options.append('-vn')
+        elif keep_streams == 'video':
+            extra_options.append('-an')
         proc = FFmpeg().\
             global_args('-y', '-v', 'error', '-progress', '-').\
             input(input_file).\
-            output(output_file, *TRANSCODING_SETTINGS, ss=str(start_at), t=str(duration)).\
+            output(output_file, *TRANSCODING_SETTINGS, *extra_options, ss=str(start_at), t=str(duration)).\
             run(wait=False)
         while fire_exit is None or not fire_exit.is_set():
             output = proc.stdout.readline()

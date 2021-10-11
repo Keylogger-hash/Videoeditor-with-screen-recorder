@@ -33,11 +33,11 @@ class ProcessingWorker(Thread):
         self.tasks = {} # type: typing.Dict[str, WorkerTask]
         self.ffmpeg_executor = FFmpegThreadExecutor(self.tasks_datastream, task_limit) # type: FFmpegThreadExecutor
 
-    def add_task(self, input_filename: str, output_filename: str, start_at: int, end_at: int) -> None:
+    def add_task(self, input_filename: str, output_filename: str, start_at: int, end_at: int, keep_streams: str) -> None:
         if output_filename in self.tasks:
             raise KeyError('Output file is queued already')
         self.on_status_changed(output_filename, TaskStatus.QUEUED)
-        future = self.ffmpeg_executor.submit(input_filename, output_filename, start_at, end_at)
+        future = self.ffmpeg_executor.submit(input_filename, output_filename, start_at, end_at, keep_streams)
         self.tasks[output_filename] = WorkerTask(output_filename, future)
 
     def stop_task(self, output_filename: str) -> None:
@@ -138,6 +138,8 @@ def start_server(address: str, worker: ProcessingWorker) -> None:
                     if request['method'] == 'ping':
                         reply = 'pong'
                     elif request['method'] == 'cut':
+                        if request['keepStreams'] is not None and request['keepStreams'] not in ('audio', 'video', 'both'):
+                            raise ValueError('Incorrect keepStreams option value')
                         if (request['startAt'] < 0) or (request['endAt'] < 0) or (request['startAt'] > request['endAt']):
                             raise ValueError('Incorrect range')
                         if not os.path.isfile(os.path.join(UPLOADS_LOCATION, request['input'])):
@@ -146,7 +148,8 @@ def start_server(address: str, worker: ProcessingWorker) -> None:
                             request['input'],
                             request['output'],
                             request['startAt'],
-                            request['endAt']
+                            request['endAt'],
+                            request['keepStreams']
                         )
                     elif request['method'] == 'cancel':
                         worker.stop_task(request['output'])

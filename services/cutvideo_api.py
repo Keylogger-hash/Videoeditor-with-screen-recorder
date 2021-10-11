@@ -1,6 +1,7 @@
 import os
 import json
 import zmq
+import glob
 from sqlalchemy import create_engine
 from sqlalchemy.sql import select
 from flask import Blueprint, current_app, request
@@ -30,13 +31,14 @@ class CutVideoService(object):
             sock.close()
             return json.loads(reply.decode('utf-8'))
 
-    def start(self, source, destination, range_start, range_end):
+    def start(self, source, destination, range_start, range_end, keep_streams):
         return self._send({
             'method': 'cut',
             'input': source,
             'output': destination,
             'startAt': range_start,
-            'endAt': range_end
+            'endAt': range_end,
+            'keepStreams': keep_streams
         })
 
     def stop(self, destination):
@@ -74,7 +76,7 @@ def get_cut_list():
         ]
     }
 
-@api.get('/cuts/<output_name>/')
+@api.get('/cuts/<output_name>')
 def get_cut_info(output_name):
     dbe = create_engine(current_app.config.get('database'))
     result = dbe.execute(select([videos]).where(videos.c.output_filename == output_name)).fetchone()
@@ -95,7 +97,7 @@ def get_cut_info(output_name):
         }
     }
 
-@api.delete('/cuts/<output_name>/')
+@api.delete('/cuts/<output_name>')
 def delete_cut(output_name):
     dbe = create_engine(current_app.config.get('database'))
     result = dbe.execute(select([videos]).where(videos.c.output_filename == output_name)).fetchone()
@@ -142,7 +144,7 @@ def start_videocut():
             'success': False,
             'error': 'Task is active'
         }
-    resp = videoservice.start(data['source'], data['destination'], data['startAt'], data['endAt'])
+    resp = videoservice.start(data['source'], data['destination'], data['startAt'], data['endAt'], data['keepStreams'])
     if resp['ok']:
         return { 'success': True }
     else:
@@ -157,3 +159,20 @@ def stop_videocut():
         return { 'success': True }
     else:
         return { 'success': False, 'error': resp['error'] }
+
+# DEBUG METHOD SHOULD BE REMOVED
+@api.get('/_uploads/')
+def list_uploads():
+    uploaded_videos = [os.path.basename(name) for name in glob.glob('{}/*.[Mm][Pp]4'.format(UPLOADS_LOCATION),)]
+    return {
+        'success': True,
+        'uploads': sorted(uploaded_videos)
+    }
+
+@api.after_request
+def add_cors_headers(response):
+    headers = response.headers
+    headers['Access-Control-Allow-Origin'] = '*'
+    headers['Access-Control-Allow-Methods'] = 'GET,POST,DELETE'
+    headers['Access-Control-Allow-Headers'] = 'Content-Type'
+    return response

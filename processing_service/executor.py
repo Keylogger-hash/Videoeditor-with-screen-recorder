@@ -43,7 +43,7 @@ class FFmpegThreadExecutor(object):
         logging.info('Started conversion: %s', output_filename)
         self.datastream.put(IPCMessage(IPCType.STATUS, output_filename, TaskStatus.WORKING))
 
-    def submit(self, input_filename: str, output_filename: str, start_at: int, end_at: int) -> typing.Optional[Future]:
+    def submit(self, input_filename: str, output_filename: str, start_at: int, end_at: int, keep_streams: str='both') -> typing.Optional[Future]:
         try:
             exit_event = Event()
             self.task_stoppers[output_filename] = exit_event
@@ -53,6 +53,7 @@ class FFmpegThreadExecutor(object):
                 os.path.join(CUTS_LOCATION, output_filename),
                 start_at,
                 end_at,
+                keep_streams,
                 exit_event,
                 partial(self.task_progress, output_filename),
                 partial(self.task_started, output_filename)
