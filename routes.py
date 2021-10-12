@@ -1,7 +1,7 @@
 from flask import Flask
 from flask import request
 from download_services import youtubedl_wrap
-from services import download_youtube_service, upload_service, cutvideo_api
+from services import upload_service, cutvideo_api, downloadvideo_api
 import os
 import uuid
 
@@ -35,6 +35,7 @@ def upload_video():
 app.config['database'] = 'sqlite:///main.db'
 app.config['videocut_service_addr'] = 'tcp://127.0.0.1:15320'
 app.register_blueprint(cutvideo_api.api, url_prefix='/api')
+app.register_blueprint(downloadvideo_api, url_prefix='/api')
 
 
 if __name__ == "__main__":

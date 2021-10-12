@@ -20,11 +20,13 @@ EXTERNAL_IPC_POLL = 10000
 
 class WorkerTask(object):
     __slots__ = ['output_filename', 'deferred_task', 'progress', 'status']
+
     def __init__(self, output_filename: str, deferred_task: Future) -> None:
         self.output_filename = output_filename # type: str
         self.deferred_task = deferred_task # type: Future
         self.progress = 0 # type: float
         self.status = TaskStatus.QUEUED # type: TaskStatus
+
 
 class ProcessingWorker(Thread):
     def __init__(self, task_limit: int) -> None:
@@ -95,6 +97,7 @@ class ProcessingWorker(Thread):
             self.ffmpeg_executor.shutdown()
             logging.info('Force stop worker')
 
+
 class DatabaseProcessingWorker(ProcessingWorker):
     def __init__(self, database_url, tasks_limit):
         super().__init__(tasks_limit)
@@ -115,8 +118,10 @@ class DatabaseProcessingWorker(ProcessingWorker):
             videos.update().where(videos.c.output_filename == subject).values(progress=int(value))
         )
 
+
 def start_server(address: str, worker: ProcessingWorker) -> None:
     quit_event = Event()
+
     def signal_handler(*args):
         print('Got SIGTERM')
         quit_event.set()
@@ -176,13 +181,6 @@ def start_server(address: str, worker: ProcessingWorker) -> None:
                     sock.send(json.dumps({'ok': True, 'data': reply}).encode('utf-8'))
                 except Exception as e:
                     sock.send(json.dumps({'ok': False, 'error': str(e)}).encode('utf-8'))
-<<<<<<< HEAD
     logging.info('Server stopped')
     worker.shutdown()
     logging.info('Worker stopped')
-=======
-
-
-if __name__ == "__main__":
-    start_server("tcp://127.0.0.1:5555", 10)
->>>>>>> download_service

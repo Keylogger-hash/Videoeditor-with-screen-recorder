@@ -1,0 +1,1 @@
+DOWNLOADS_LOCATION = 'downloads'

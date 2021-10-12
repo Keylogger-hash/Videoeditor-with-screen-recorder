@@ -11,6 +11,7 @@ from processing_service.paths import UPLOADS_LOCATION, CUTS_LOCATION
 
 api = Blueprint('cutvideo_api', __name__)
 
+
 class CutVideoService(object):
     def __init__(self, address):
         self.address = address
@@ -58,6 +59,7 @@ class CutVideoService(object):
             'output': destination
         })
 
+
 @api.get('/cuts/')
 def get_cut_list():
     dbe = create_engine(current_app.config.get('database'))
@@ -75,6 +77,7 @@ def get_cut_list():
             } for item in result
         ]
     }
+
 
 @api.get('/cuts/<output_name>')
 def get_cut_info(output_name):
@@ -96,6 +99,7 @@ def get_cut_info(output_name):
             'progress': result['progress']
         }
     }
+
 
 @api.delete('/cuts/<output_name>')
 def delete_cut(output_name):
@@ -150,6 +154,7 @@ def start_videocut():
     else:
         return { 'success': False, 'error': resp['error'] }
 
+
 @api.delete('/cuts/')
 def stop_videocut():
     data = request.json
@@ -160,6 +165,7 @@ def stop_videocut():
     else:
         return { 'success': False, 'error': resp['error'] }
 
+
 # DEBUG METHOD SHOULD BE REMOVED
 @api.get('/_uploads/')
 def list_uploads():
@@ -168,6 +174,7 @@ def list_uploads():
         'success': True,
         'uploads': sorted(uploaded_videos)
     }
+
 
 @api.after_request
 def add_cors_headers(response):
