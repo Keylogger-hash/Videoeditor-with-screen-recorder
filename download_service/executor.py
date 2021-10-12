@@ -24,10 +24,14 @@ class YoutubeDlExecutor:
 
     def task_stop(self, link: str):
         stop_download_video(link)
+        print(self.task_stoppers)
+        if link in self.task_stoppers:
+            self.task_stoppers[link].set()
 
     def submit(self, link: str):
         exit_event = Event()
         self.task_stoppers[link] = exit_event
+        print()
         try:
             task_future = self.ex.submit(
                 download_video,

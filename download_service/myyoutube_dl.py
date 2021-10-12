@@ -27,7 +27,10 @@ class YoutubeDl:
         subprocess.run(self.args())
 
     def stop(self):
-        os.killpg(os.getpgid(self.process_ids[self.link]), signal.SIGTERM)
+        proc = subprocess.run(["kill", str(self.process_ids[self.link])])
+        print(str(self.process_ids[self.link]))
+        return proc
+        #os.killpg(os.getpgid(self.process_ids[self.link]), signal.SIGINT)
 
     def global_args(self, *args, **kwargs):
         self.global_opts += args
@@ -54,11 +57,9 @@ class YoutubeDl:
             print(return_code)
             if return_code != 0:
                 print('YoutubeDl returned {}\nStdout: {}\nStderr: {}'.format(return_code, output.decode('utf-8'), errors.decode('utf-8')))
-                raise Error(return_code)
-            else:
-                return return_code
+            return return_code
         else:
-            subprocess.Popen(self.args(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            return subprocess.Popen(self.args(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
 
 if __name__ == "__main__":

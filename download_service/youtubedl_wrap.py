@@ -8,7 +8,8 @@ youtubedl = YoutubeDl()
 
 
 def download_video(link: str, fire_exit: Event=None, progress_callback=None):
-    proc = youtubedl.input(link).global_args().run()
+    proc = youtubedl.input(link).global_args().run(wait=True)
+    print(proc)
 
     while fire_exit is None or not fire_exit.is_set():
         output = proc.stdout.readline()
@@ -20,5 +21,8 @@ def download_video(link: str, fire_exit: Event=None, progress_callback=None):
         return proc.poll()
 
 def stop_download_video(link: str, fire_exit: Event=None):
-    youtubedl.input(link).stop()
+    proc = youtubedl.input(link).stop()
+    print(proc.poll())
+    if fire_exit is None or not fire_exit.is_set():
+        return proc.poll()
 
