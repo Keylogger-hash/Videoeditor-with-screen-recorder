@@ -1,8 +1,10 @@
 from flask import Flask
 from flask import request
+from download_services import youtubedl_wrap
 from services import download_youtube_service, upload_service, cutvideo_api
 import os
 import uuid
+
 
 app = Flask(__name__)
 
@@ -20,7 +22,7 @@ def download_video():
     if data['link'] == None:
         return "Link video not specified"
     link = data['link']
-    if download_youtube_service.download(link) == True:
+    if youtubedl_wrap.download(link) == True:
         return "Finish uploading"
 
 @app.route("/upload", methods=['POST', 'PUT'])

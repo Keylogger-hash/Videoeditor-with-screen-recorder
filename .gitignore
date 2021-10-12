@@ -7,6 +7,9 @@
 node_modules/
 dist/
 
+# Pycache files
+__pycache__/*
+
 # Compiled Java class files
 *.class
 

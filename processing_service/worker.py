@@ -17,6 +17,7 @@ from database.datamodel import videos
 WORKER_IPC_POLL = 10000
 EXTERNAL_IPC_POLL = 10000
 
+
 class WorkerTask(object):
     __slots__ = ['output_filename', 'deferred_task', 'progress', 'status']
     def __init__(self, output_filename: str, deferred_task: Future) -> None:
@@ -175,6 +176,13 @@ def start_server(address: str, worker: ProcessingWorker) -> None:
                     sock.send(json.dumps({'ok': True, 'data': reply}).encode('utf-8'))
                 except Exception as e:
                     sock.send(json.dumps({'ok': False, 'error': str(e)}).encode('utf-8'))
+<<<<<<< HEAD
     logging.info('Server stopped')
     worker.shutdown()
     logging.info('Worker stopped')
+=======
+
+
+if __name__ == "__main__":
+    start_server("tcp://127.0.0.1:5555", 10)
+>>>>>>> download_service
