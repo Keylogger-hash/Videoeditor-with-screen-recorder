@@ -1,18 +1,18 @@
-import datetime
+import typing
 import uuid
-from typing import List, Union, Tuple, Dict, Mapping, Any, Optional
-from enum import IntEnum
-from sqlalchemy import Table, MetaData, Column, Integer, Numeric, String, Text, DateTime, Boolean, ForeignKeyConstraint
+from sqlalchemy import MetaData, Table, Column, String, Integer, Text, DateTime
+from processing_service.common import TaskStatus
 from sqlalchemy.dialects.postgresql import UUID
-
 metadata = MetaData()
 
-
-class VideoStatus(IntEnum):
-    PENDING = 0
-    PROCESSING = 1
-    COMPLETED = 2
-    FAILED = 3
+videos = Table('videos', metadata,
+    Column('output_filename', String, nullable=False, primary_key=True),
+    Column('source', String, nullable=False),
+    Column('task_begin', DateTime, nullable=True),
+    Column('task_end', DateTime, nullable=True),
+    Column('status', Integer, nullable=False, default=TaskStatus.INACTIVE),
+    Column('progress', Integer, default=0)
+)
 
 records = Table('records', metadata,
     Column('video_id', UUID(as_uuid=True), nullable=False, primary_key=True),
@@ -20,7 +20,7 @@ records = Table('records', metadata,
 )
 
 
-def add_video(dbe: Any, filename: str) -> None:
+def add_video(dbe: typing.Any, filename: str) -> None:
     video_id = uuid.uuid4()
     dbe.execute(records.insert().values(
         video_id=video_id,
