@@ -7,8 +7,8 @@ dls_opt = {"ratelimit": 1000000000}
 youtubedl = YoutubeDl()
 
 
-def download_video(link: str, fire_exit: Event=None, progress_callback=None):
-    proc = youtubedl.input(link).global_args().run(wait=True)
+def download_video(link: str, fire_exit: Event = None):
+    proc = youtubedl.input(link).global_args().run(wait=False)
     print(proc)
 
     while fire_exit is None or not fire_exit.is_set():

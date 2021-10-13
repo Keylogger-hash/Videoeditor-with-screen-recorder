@@ -9,9 +9,9 @@ from concurrent.futures import Future
 from threading import Event, Thread
 from queue import Queue, Empty as QueueIsEmpty
 from sqlalchemy import create_engine
-from processing_service.executor import FFmpegThreadExecutor
-from processing_service.common import IPCMessage, IPCType, TaskStatus
-from processing_service.paths import UPLOADS_LOCATION, CUTS_LOCATION
+from executor import FFmpegThreadExecutor
+from common import IPCMessage, IPCType, TaskStatus
+from paths import UPLOADS_LOCATION, CUTS_LOCATION
 from database.datamodel import videos
 
 WORKER_IPC_POLL = 10000

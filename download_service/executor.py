@@ -9,9 +9,10 @@ from common import IPCType, IPCMessage, TaskStatus
 from functools import partial
 from threading import Event
 
+
 class YoutubeDlExecutor:
 
-    def __init__(self,dataStream: Queue, max_workers=3):
+    def __init__(self, dataStream: Queue, max_workers=5):
         super().__init__()
         self.ex = ThreadPoolExecutor(max_workers=max_workers)
         self.datastream = dataStream
@@ -21,6 +22,11 @@ class YoutubeDlExecutor:
         result = future.result()
         logging.info('Done %s - %s', result, link)
         del self.task_stoppers[link]
+
+    def shutdown(self) -> None:
+        for task in self.task_stoppers:
+            self.task_stoppers[task].set()
+        self.ex.shutdown()
 
     def task_stop(self, link: str):
         stop_download_video(link)

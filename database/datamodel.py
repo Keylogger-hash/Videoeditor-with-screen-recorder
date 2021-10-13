@@ -16,9 +16,11 @@ videos = Table('videos', metadata,
 download_videos = Table('download_videos', metadata,
     Column('video_id', UUID(as_uuid=True), nullable=False, primary_key=True),
     Column('link', String, nullable=False),
+    Column('title', String, nullable=True),
     Column('quality', nullable=True, default='default'),
+    Column('task_begin', DateTime, nullable=True),
+    Column('task_end', DateTime, nullable=True),
     Column('status', Integer, nullable=False, default=TaskStatus.INACTIVE),
-    Column('progress', Integer, default=0)
 )
 
 uploads = Table('source_videos', metadata,

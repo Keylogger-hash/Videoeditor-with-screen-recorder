@@ -5,7 +5,8 @@ import glob
 from sqlalchemy import create_engine
 from sqlalchemy.sql import select
 from flask import Blueprint, current_app, request
-from database.datamodel import videos
+from database.datamodel import videos, download_videos
+from youtube_dl import YoutubeDL
 from download_service.common import TaskStatus
 from download_service.paths import DOWNLOADS_LOCATION
 
@@ -21,49 +22,130 @@ class DownloadVideoApi(object):
     def _send(self, data):
         try:
             context = zmq.Context()
-            socket = context.socket()
-            socket.connect(f'tcp://127.0.0.1:{self.address}')
-            socket.send(b"{'method':'ping'}")
-            socket.recv()
+            socket = context.socket(zmq.REQ)
+            socket.connect(self.address)
+            # socket.send(b'{"method":"ping"}')
+            # socket.recv()
             socket.send(json.dumps(data).encode('UTF-8'))
             message = socket.recv()
         except Exception as e:
             raise
-        finally:
-            socket.close()
-            return json.loads(message).decode('UTF-8')
+        socket.close()
+        return json.loads(message.decode('UTF-8'))
 
+    def start(self, link):
+        return self._send({
+            "method": "download",
+            "link": link
+        })
 
-    def start(self):
-        data = request.json
-        self._send(data)
-
-    def stop(self,):
-        data = request.json
-        self._send(data)
+    def stop(self, link):
+        return self._send({
+            "method": "cancel",
+            "link": link
+        })
 
     def list_tasks(self):
-        pass
-
-    def get_proggress(self):
-        pass
+        return self._send({
+            "method": "list"
+        })
 
 
 @api.get('downloads/')
 def list_tasks_of_downloading():
-    pass
+    dbe = create_engine(current_app.config.get('database'))
+    result = dbe.execute(select([download_videos])).fetchall()
+    return {
+        "success": True,
+        "downloads": [
+            {
+                "link": item["link"],
+                "quality": item["quality"],
+                "status": item["status"],
+                "progress": item["progress"]
+            }
+            for item in result
+        ]
+    }
 
 
-@api.get('downloads/<id>/progress')
-def get_downloading_video_info():
-    pass
+@api.get("downloads/<id>/info")
+def get_downloading_info():
+    data = request.json
+    dbe = create_engine(current_app.config.get('database'))
+    result = dbe.execute(select([download_videos]).where(download_videos.c.link == data["link"]))
+    if result is None:
+        return {
+            "success": False,
+            "error": "Record doesn't exist"
+        }
+    else:
+        return {
+            "success": True,
+            "link": data["link"],
+            "title": result["title"],
+            "quality": result["quality"]
+        }
 
 
-@api.get('downloads/<id>/cancel')
-def stop_downloading_video():
-    pass
+# @api.get('downloads/<id>/progress')
+# def get_downloading_progress(id):
+#     download_service = DownloadVideoApi(current_app.config.get('download_service_addr'))
+#     resp = download_service.get_proggress(id)
+#     if resp["ok"]:
+#         return {"success": resp["ok"], "data": resp}
+#     else:
+#         return {"success": resp["ok"], "error": resp["error"]}
+
+
+@api.delete('downloads/<id>/cancel')
+def stop_downloading_video(id):
+    dbe = create_engine(current_app.config.get('database'))
+    result = dbe.execute(select[download_videos].where(download_videos.c.video_id == id)).fetchone()
+    if result is None:
+        return {'success': False, 'error': "Record doesn't exist"}
+
+    if result['status'] in (TaskStatus.WAITING, TaskStatus.WORKING, TaskStatus.INACTIVE):
+        download_service = DownloadVideoApi(current_app.config.get('download_service_addr'))
+        resp = download_service.stop(result['link'])
+        print(resp)
+
+    return {'success': True}
 
 
 @api.post('downloads/')
 def start_downloading():
-    pass
+    data = request.json
+    dbe = create_engine(current_app.config.get('database'))
+    result = dbe.execute(select([download_videos.c.status]).where(download_videos.c.link == data['link']))
+
+    if result is not None and result == TaskStatus.COMPLETED:
+        return {
+            "success": False,
+            "error": "Video already downloading"
+        }
+
+    elif result is not None and result == TaskStatus.WORKING:
+        return {
+            "success": False,
+            "error": "Task is active"
+        }
+
+    elif result is None:
+        info_dict = youtube_dl.YoutubeDL().extract_info(url=data["link"], download=False)
+        dbe.execute(
+            download_videos.insert.values(
+                link=data["link"],
+                quality=data["quality"],
+                status=TaskStatus.INACTIVE,
+                title=info_dict['title']
+            )
+        )
+
+    download_service = DownloadVideoApi(current_app.config.get('download_service_addr'))
+    resp = download_service.start(data["link"])
+    print(resp)
+    if resp["ok"]:
+        return {"success": resp['ok']}
+    else:
+        return {"success": resp["ok"], "error": resp["error"]}

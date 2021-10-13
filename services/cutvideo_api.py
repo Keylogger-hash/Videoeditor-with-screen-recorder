@@ -119,7 +119,7 @@ def delete_cut(output_name):
     # NOTE: remove in service instead?
     if os.path.isfile(output_name):
         os.remove(os.path.join(CUTS_LOCATION, output_name))
-    return { 'success': True }
+    return {'success': True}
 
 
 @api.post('/cuts/')

@@ -27,7 +27,8 @@ class YoutubeDl:
         subprocess.run(self.args())
 
     def stop(self):
-        proc = subprocess.run(["kill", str(self.process_ids[self.link])])
+        proc = self.process_ids[self.link]
+        proc.terminate()
         print(str(self.process_ids[self.link]))
         return proc
         #os.killpg(os.getpgid(self.process_ids[self.link]), signal.SIGINT)
@@ -50,7 +51,7 @@ class YoutubeDl:
         if wait is True:
             print(self.args())
             process = subprocess.Popen(self.args(), stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=False)
-            self.process_ids[self.link] = process.pid
+            self.process_ids[self.link] = process
             output, errors = process.communicate()
             return_code = process.poll()
             print(self.process_ids)
