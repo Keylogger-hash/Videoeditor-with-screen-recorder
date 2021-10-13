@@ -1,5 +1,9 @@
+import os
+import sys
 import logging
-from .worker import start_server, DatabaseProcessingWorker
+sys.path.append(os.getcwd())
+import settings
+from processing_service.worker import start_server, DatabaseProcessingWorker
 logging.basicConfig(level=logging.DEBUG)
-worker = DatabaseProcessingWorker('sqlite:///main.db', 4)
-start_server('tcp://127.0.0.1:15320', worker)
+worker = DatabaseProcessingWorker(settings.DATABASE, settings.VIDEOCUT_SERVICE_WORKERS)
+start_server(settings.VIDEOCUT_SERVICE_ADDR, worker)
