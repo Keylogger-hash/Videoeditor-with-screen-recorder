@@ -43,10 +43,8 @@ def upload_video():
         "error": "Video can't upload"
     }
 
-app.config['database'] = 'sqlite:///main.db'
-app.config['videocut_service_addr'] = 'tcp://127.0.0.1:15320'
 app.register_blueprint(cutvideo_api.api, url_prefix='/api')
-
+app.config.from_object('settings')
 
 if __name__ == "__main__":
     app.run()

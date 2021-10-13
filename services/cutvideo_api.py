@@ -2,16 +2,55 @@ import os
 import json
 import zmq
 import glob
+import functools
 from sqlalchemy import create_engine
 from sqlalchemy.sql import select
 from flask import Blueprint, current_app, request
+from jsonschema import validate, ValidationError
 from database.datamodel import videos
 from processing_service.common import TaskStatus
 from processing_service.paths import UPLOADS_LOCATION, CUTS_LOCATION
 
 api = Blueprint('cutvideo_api', __name__)
 
+TASK_ADD_REQUEST_SCHEMA = {
+    'type': 'object',
+    'required': [
+        'source',
+        'destination',
+        'startAt',
+        'endAt',
+        'keepStreams'
+    ],
+    'properties': {
+        'source': {
+            'type': 'string'
+        },
+        'destination': {
+            'type': 'string'
+        },
+        'startAt': {
+            'type': 'number',
+            'minimum': 0
+        },
+        'endAt': {
+            'type': 'number',
+            'minimum': 0
+        },
+        'keepStreams': {
+            'type': 'string',
+            'enum': [
+                'both', 'video', 'audio'
+            ]
+        }
+    }
+}
+
+def get_link_to_cut_video(video_name):
+    return '/files/cuts/' + video_name
+
 class CutVideoService(object):
+
     def __init__(self, address):
         self.address = address
 
@@ -19,6 +58,8 @@ class CutVideoService(object):
         try:
             context = zmq.Context()
             sock = context.socket(zmq.REQ)
+            # check if service is available by sending ping
+            # and waiting for 10s
             sock.RCVTIMEO = 10000
             sock.connect(self.address)
             sock.send(b'{"method":"ping"}')
@@ -58,15 +99,23 @@ class CutVideoService(object):
             'output': destination
         })
 
+def requires_db(callback):
+    @functools.wraps(callback)
+    def fn(*args, **kwargs):
+        kwargs['db'] = create_engine(current_app.config.get('DATABASE'))
+        return callback(*args, **kwargs)
+    return fn
+
 @api.get('/cuts/')
-def get_cut_list():
-    dbe = create_engine(current_app.config.get('database'))
-    result = dbe.execute(select([videos]).order_by(videos.c.output_filename.asc())).fetchall()
+@requires_db
+def get_cut_list(db):
+    result = db.execute(select([videos]).order_by(videos.c.output_filename.asc())).fetchall()
     return {
         'success': True,
         'cuts': [
             {
                 'filename': item['output_filename'],
+                'link': get_link_to_cut_video(item['output_filename']),
                 'source': item['source'],
                 'taskStartedAt': item['task_begin'],
                 'taskFinishedAt': item['task_end'],
@@ -76,10 +125,11 @@ def get_cut_list():
         ]
     }
 
+
 @api.get('/cuts/<output_name>')
-def get_cut_info(output_name):
-    dbe = create_engine(current_app.config.get('database'))
-    result = dbe.execute(select([videos]).where(videos.c.output_filename == output_name)).fetchone()
+@requires_db
+def get_cut_info(output_name, db):
+    result = db.execute(select([videos]).where(videos.c.output_filename == output_name)).fetchone()
     if result is None:
         return {
             'success': False,
@@ -89,6 +139,7 @@ def get_cut_info(output_name):
         'success': True,
         'result': {
             'filename': result['output_filename'],
+            'link': get_link_to_cut_video(result['output_filename']),
             'source': result['source'],
             'taskStartedAt': result['task_begin'],
             'taskFinishedAt': result['task_end'],
@@ -97,21 +148,23 @@ def get_cut_info(output_name):
         }
     }
 
+
 @api.delete('/cuts/<output_name>')
-def delete_cut(output_name):
-    dbe = create_engine(current_app.config.get('database'))
-    result = dbe.execute(select([videos]).where(videos.c.output_filename == output_name)).fetchone()
+@requires_db
+def delete_cut(output_name, db):
+    result = db.execute(select([videos]).where(videos.c.output_filename == output_name)).fetchone()
     if result is None:
         return {
             'success': False,
             'error': 'Not found'
         }
     if result['status'] in (TaskStatus.WAITING, TaskStatus.WORKING, TaskStatus.INACTIVE):
-        videoservice = CutVideoService(current_app.config.get('videocut_service_addr'))
-        resp = videoservice.stop(output_name)
-        # TODO: debug, remove someday
-        print(resp)
-    dbe.execute(videos.delete().where(videos.c.output_filename == output_name))
+        videoservice = CutVideoService(current_app.config.get('VIDEOCUT_SERVICE_ADDR'))
+        try:
+            resp = videoservice.stop(output_name)
+        except:
+            print('Got exception when requested service')
+    db.execute(videos.delete().where(videos.c.output_filename == output_name))
     # NOTE: remove in service instead?
     if os.path.isfile(output_name):
         os.remove(os.path.join(CUTS_LOCATION, output_name))
@@ -119,19 +172,26 @@ def delete_cut(output_name):
 
 
 @api.post('/cuts/')
-def start_videocut():
+@requires_db
+def start_videocut(db):
     data = request.json
     # TODO: validation
-    dbe = create_engine(current_app.config.get('database'))
-    videoservice = CutVideoService(current_app.config.get('videocut_service_addr'))
-    result = dbe.execute(select([videos.c.status]).where(videos.c.output_filename == data['destination'])).fetchone()
+    try:
+        validate(data, TASK_ADD_REQUEST_SCHEMA)
+    except ValidationError as e:
+        return {
+            'success': False,
+            'error': 'Invalid request: {}'.format(e.message)
+        }
+    videoservice = CutVideoService(current_app.config.get('VIDEOCUT_SERVICE_ADDR'))
+    result = db.execute(select([videos.c.status]).where(videos.c.output_filename == data['destination'])).fetchone()
     # NOTE: allowing retrying complete task with same output name is meaningless a bit - should be reconsidered
-    if result is not None and result['status'] in (TaskStatus.FAILED, TaskStatus.COMPLETED, TaskStatus.INACTIVE): # restarting completed/failed task
-        dbe.execute(
+    if result is not None and result['status'] in (TaskStatus.FAILED, TaskStatus.COMPLETED, TaskStatus.INACTIVE):  # restarting completed/failed task
+        db.execute(
             videos.update().where(videos.c.output_filename == data['destination']).values(status=TaskStatus.INACTIVE, progress=0)
         )
-    elif result is None: # creating new task
-        dbe.execute(
+    elif result is None:  # creating new task
+        db.execute(
             videos.insert().values(
                 output_filename=data['destination'],
                 source=data['source'],
@@ -139,22 +199,15 @@ def start_videocut():
                 progress=0
             )
         )
-    else: # task is queued/in progress
+    else:  # task is queued/in progress
         return {
             'success': False,
             'error': 'Task is active'
         }
-    resp = videoservice.start(data['source'], data['destination'], data['startAt'], data['endAt'], data['keepStreams'])
-    if resp['ok']:
-        return { 'success': True }
-    else:
-        return { 'success': False, 'error': resp['error'] }
-
-@api.delete('/cuts/')
-def stop_videocut():
-    data = request.json
-    videoservice = CutVideoService(current_app.config.get('videocut_service_addr'))
-    resp = videoservice.stop(data['destination'])
+    try:
+        resp = videoservice.start(data['source'], data['destination'], data['startAt'], data['endAt'], data['keepStreams'])
+    except:
+        return { 'success': False, 'error': 'Failed to request service' }
     if resp['ok']:
         return { 'success': True }
     else:
@@ -168,6 +221,7 @@ def list_uploads():
         'success': True,
         'uploads': sorted(uploaded_videos)
     }
+
 
 @api.after_request
 def add_cors_headers(response):
