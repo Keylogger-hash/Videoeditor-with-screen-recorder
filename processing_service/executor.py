@@ -10,6 +10,7 @@ from processing_service.common import IPCType, IPCMessage, TaskStatus
 from processing_service.ffwrap import convert_file
 from processing_service.paths import UPLOADS_LOCATION, CUTS_LOCATION
 
+
 class FFmpegThreadExecutor(object):
     def __init__(self, datastream: Queue, workers_queue: int=3) -> None:
         super().__init__()

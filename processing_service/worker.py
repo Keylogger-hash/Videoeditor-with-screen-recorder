@@ -9,21 +9,24 @@ from concurrent.futures import Future
 from threading import Event, Thread
 from queue import Queue, Empty as QueueIsEmpty
 from sqlalchemy import create_engine
-from processing_service.executor import FFmpegThreadExecutor
-from processing_service.common import IPCMessage, IPCType, TaskStatus
-from processing_service.paths import UPLOADS_LOCATION, CUTS_LOCATION
+from executor import FFmpegThreadExecutor
+from common import IPCMessage, IPCType, TaskStatus
+from paths import UPLOADS_LOCATION, CUTS_LOCATION
 from database.datamodel import videos
 
 WORKER_IPC_POLL = 10000
 EXTERNAL_IPC_POLL = 10000
 
+
 class WorkerTask(object):
     __slots__ = ['output_filename', 'deferred_task', 'progress', 'status']
+
     def __init__(self, output_filename: str, deferred_task: Future) -> None:
         self.output_filename = output_filename # type: str
         self.deferred_task = deferred_task # type: Future
         self.progress = 0 # type: float
         self.status = TaskStatus.QUEUED # type: TaskStatus
+
 
 class ProcessingWorker(Thread):
     def __init__(self, task_limit: int) -> None:
@@ -94,6 +97,7 @@ class ProcessingWorker(Thread):
             self.ffmpeg_executor.shutdown()
             logging.info('Force stop worker')
 
+
 class DatabaseProcessingWorker(ProcessingWorker):
     def __init__(self, database_url, tasks_limit):
         super().__init__(tasks_limit)
@@ -114,8 +118,10 @@ class DatabaseProcessingWorker(ProcessingWorker):
             videos.update().where(videos.c.output_filename == subject).values(progress=int(value))
         )
 
+
 def start_server(address: str, worker: ProcessingWorker) -> None:
     quit_event = Event()
+
     def signal_handler(*args):
         print('Got SIGTERM')
         quit_event.set()

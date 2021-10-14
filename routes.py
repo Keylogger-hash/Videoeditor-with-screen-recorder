@@ -1,7 +1,14 @@
-from flask import Flask
-from flask import request
-import json
-from services import download_youtube_service, upload_service, cutvideo_api
+import os
+import uuid
+import datetime
+from base64 import b32encode
+from flask import Flask, request, current_app
+from sqlalchemy import create_engine
+from services import cutvideo_api, downloadvideo_api
+from settings import DOWNLOADS_LOCATION
+from download_service.common import TaskStatus
+from database.datamodel import download_videos
+
 
 app = Flask(__name__)
 
@@ -10,30 +17,31 @@ app = Flask(__name__)
 def index():
     return "Hello world"
 
-
-@app.route("/download_video_from_youtube", methods=['POST'])
-def download_video():
-    data = request.get_json()
-    if data == None:
-        return "Wrong data format"
-    if data['link'] == None:
-        return "Link video not specified"
-    link = data['link']
-    if download_youtube_service.download(link) == True:
-        return {
-            "success": True,
-            "error": None
-        }
-    return {
-        'success': False,
-        'error': "Video can't download"
-    }
-
-
 @app.route("/upload", methods=['POST', 'PUT'])
 def upload_video():
-    data = request.data
-    if upload_service.upload(data) == True:
+    if not 'upload' in request.files:
+        return {
+            'success': False,
+            'error': 'No file sent for uploading'
+        }
+    uploaded_file = request.files['upload']
+    if uploaded_file:
+        db = create_engine(current_app.config.get('DATABASE'))
+        video_id = uuid.uuid4()
+        now = datetime.datetime.now()
+        _, file_ext = os.path.splitext(uploaded_file.filename)
+        output_filename = '{}{}'.format(b32encode(video_id.bytes).strip(b'=').lower(), file_ext)
+        db.execute(download_videos.insert().values(
+            video_id=video_id,
+            filename=output_filename,
+            link='',
+            title=uploaded_file.filename,
+            quality=None,
+            task_begin=now,
+            task_end=now,
+            status=TaskStatus.COMPLETED
+        ))
+        uploaded_file.save(DOWNLOADS_LOCATION, output_filename)
         return {
             "success": True,
             "error": None
@@ -44,7 +52,8 @@ def upload_video():
     }
 
 app.register_blueprint(cutvideo_api.api, url_prefix='/api')
+app.register_blueprint(downloadvideo_api.api, url_prefix='/api')
 app.config.from_object('settings')
 
 if __name__ == "__main__":
-    app.run()
+    app.run(debug=True)
