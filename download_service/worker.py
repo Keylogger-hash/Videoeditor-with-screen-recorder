@@ -9,7 +9,7 @@ from threading import Event, Thread
 from queue import Queue, Empty as QueueIsEmpty
 from sqlalchemy import create_engine
 from flask import current_app
-from database.datamodel import download_videos
+from .database.datamodel import download_videos
 from common import IPCMessage, IPCType, TaskStatus
 from executor import YoutubeDlExecutor
 
@@ -125,7 +125,7 @@ def start_server(address: str, tasks_limit: int):
                 if request['method'] == 'ping':
                     reply = 'pong'
                 elif request['method'] == 'download':
-                    if request['link'] == "None":
+                    if request['link'] is None:
                         raise ValueError("Not link")
                     print("Download starting")
                     worker.add_task(request['link'])
