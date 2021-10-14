@@ -4,10 +4,10 @@ from download_service.myyoutube_dl import YoutubeDl
 
 dls_opt = {"ratelimit": 1000000000}
 
-youtubedl = YoutubeDl(YOUTUBE_DL_EXECUTABLE)
 
 
 def download_video(link: str, destination: str, fire_exit: Event = None):
+    youtubedl = YoutubeDl(YOUTUBE_DL_EXECUTABLE)
     proc = youtubedl.input(link).global_args('--output', destination).run(wait=False)
 
     while fire_exit is None or not fire_exit.is_set():
