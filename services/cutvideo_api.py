@@ -2,6 +2,7 @@ import os
 import json
 import zmq
 import glob
+import typing
 import functools
 from sqlalchemy import create_engine
 from sqlalchemy.sql import select
@@ -46,15 +47,15 @@ TASK_ADD_REQUEST_SCHEMA = {
     }
 }
 
-def get_link_to_cut_video(video_name):
+def get_link_to_cut_video(video_name: str) -> str:
     return '/files/cuts/' + video_name
 
 class CutVideoService(object):
 
-    def __init__(self, address):
-        self.address = address
+    def __init__(self, address: str):
+        self.address = address # type: str
 
-    def _send(self, data):
+    def _send(self, data: typing.Any) -> typing.Any:
         try:
             context = zmq.Context()
             sock = context.socket(zmq.REQ)
@@ -66,13 +67,13 @@ class CutVideoService(object):
             sock.recv()
             sock.send(json.dumps(data).encode('utf-8'))
             reply = sock.recv()
-        except Exception as e:
+        except Exception:
             raise
         finally:
             sock.close()
             return json.loads(reply.decode('utf-8'))
 
-    def start(self, source, destination, range_start, range_end, keep_streams):
+    def start(self, source: str, destination: str, range_start: int, range_end: int, keep_streams: str) -> typing.Any:
         return self._send({
             'method': 'cut',
             'input': source,
@@ -82,18 +83,18 @@ class CutVideoService(object):
             'keepStreams': keep_streams
         })
 
-    def stop(self, destination):
+    def stop(self, destination: str) -> typing.Any:
         return self._send({
             'method': 'cancel',
             'output': destination
         })
 
-    def list_tasks(self):
+    def list_tasks(self) -> typing.Any:
         return self._send({
             'method': 'list'
         })
 
-    def get_progress(self, destination):
+    def get_progress(self, destination: str) -> typing.Any:
         return self._send({
             'method': 'progress',
             'output': destination
@@ -148,7 +149,6 @@ def get_cut_info(output_name, db):
         }
     }
 
-
 @api.delete('/cuts/<output_name>')
 @requires_db
 def delete_cut(output_name, db):
@@ -175,7 +175,6 @@ def delete_cut(output_name, db):
 @requires_db
 def start_videocut(db):
     data = request.json
-    # TODO: validation
     try:
         validate(data, TASK_ADD_REQUEST_SCHEMA)
     except ValidationError as e:

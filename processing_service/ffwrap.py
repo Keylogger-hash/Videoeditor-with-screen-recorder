@@ -6,6 +6,7 @@ from processing_service.myff import FFprobe, FFmpeg, Error as FFmpegError
 ERROR_INCORRECT_ARGUMENTS = 500
 ERROR_PROBE_FAILED = 510
 ERROR_TASK_CANCELLED = 520
+ERROR_EXCEPTION = 600
 
 TRANSCODING_SETTINGS = ['-avoid_negative_ts', '1']  # type: t.List[str]
 
@@ -50,3 +51,5 @@ def convert_file(input_file: str, output_file: str, start_at: int, end_at: int, 
             return ERROR_TASK_CANCELLED
     except FFmpegError:
         return ERROR_PROBE_FAILED
+    except:
+        return ERROR_EXCEPTION
