@@ -31,10 +31,11 @@ class DownloadVideoApi(object):
         socket.close()
         return json.loads(message.decode('UTF-8'))
 
-    def start(self, link):
+    def start(self, link, destination):
         return self._send({
             "method": "download",
-            "link": link
+            "link": link,
+            "destination": destination
         })
 
     def stop(self, link):
@@ -106,7 +107,6 @@ def start_downloading():
     data = request.json
     dbe = create_engine(current_app.config.get('database'))
     result = dbe.execute(select([download_videos.c.status]).where(download_videos.c.link == data['link'])).fetchone()
-    print(result)
     if result is not None and result == TaskStatus.COMPLETED:
         return {
             "success": False,
@@ -121,10 +121,13 @@ def start_downloading():
 
     elif result is None:
         info_dict = youtube_dl.YoutubeDL().extract_info(url=data["link"], download=False)
-        uuid4 = uuid.uuid4()
+        video_id = uuid.uuid4()
+        # TODO: check extension somehow
+        output_filename = '{}.mp4'.format(b32encode(video_id.bytes).strip(b'=').lower())
         dbe.execute(
             download_videos.insert().values(
-                video_id=uuid4,
+                video_id=video_id,
+                filename=output_filename,
                 link=data["link"],
                 quality=data['quality'],
                 title=info_dict['title'],
@@ -132,9 +135,11 @@ def start_downloading():
             )
         )
 
+    else:
+        output_filename = result['filename']
+
     download_service = DownloadVideoApi(current_app.config.get('download_service_addr'))
-    resp = download_service.start(data["link"])
-    print(resp)
+    resp = download_service.start(data["link"], output_filename)
     if resp["ok"]:
         return {"success": resp['ok']}
     else:

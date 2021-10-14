@@ -8,7 +8,7 @@ from download_service.youtubedl_wrap import stop_download_video
 from download_service.common import IPCType, IPCMessage, TaskStatus
 from functools import partial
 from threading import Event
-
+from settings import DOWNLOADS_LOCATION
 
 class YoutubeDlExecutor:
 
@@ -34,14 +34,14 @@ class YoutubeDlExecutor:
         if link in self.task_stoppers:
             self.task_stoppers[link].set()
 
-    def submit(self, link: str):
+    def submit(self, link: str, destination: str):
         exit_event = Event()
         self.task_stoppers[link] = exit_event
-        print()
         try:
             task_future = self.ex.submit(
                 download_video,
                 link,
+                os.path.join(DOWNLOADS_LOCATION, destination),
                 exit_event
             )
             task_future.add_done_callback(partial(self.task_done, link))

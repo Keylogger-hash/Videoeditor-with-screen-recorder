@@ -34,9 +34,8 @@ class YoutubeDl:
     def global_args(self, *args, **kwargs):
         self.global_opts += args
         for k, v in kwargs.items():
-            self.global_opts.append(k)
+            self.global_opts.append('-{}'.format(k))
             self.global_opts.append(v)
-        print(self.global_opts)
         return self
 
     def args(self):

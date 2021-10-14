@@ -41,8 +41,8 @@ class ProcessingTasks(Thread):
         self.tasks = {}
         self.youtubedl_executor = YoutubeDlExecutor(self.tasks_datastream, max_workers=self.limit)
 
-    def add_task(self, link: str):
-        future = self.youtubedl_executor.submit(link)
+    def add_task(self, link: str, destination: str):
+        future = self.youtubedl_executor.submit(link, destination)
         self.tasks[link] = WorkerTask(link, future)
         self.on_status_changed(link, TaskStatus.WORKING)
 
@@ -128,10 +128,10 @@ def start_server(address: str, tasks_limit: int):
                 if request['method'] == 'ping':
                     reply = 'pong'
                 elif request['method'] == 'download':
-                    if request['link'] is None:
+                    if request['link'] is None or request['destination'] is None:
                         raise ValueError("Not link")
                     print("Download starting")
-                    worker.add_task(request['link'])
+                    worker.add_task(request['link'], request['destination'])
                 elif request['method'] == 'cancel':
                     worker.stop(request['link'])
                 elif request['method'] == 'list':
