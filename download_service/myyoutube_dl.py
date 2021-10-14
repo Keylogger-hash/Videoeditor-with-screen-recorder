@@ -9,8 +9,9 @@ class Error(BaseException):
 
 
 class YoutubeDl:
-    def __init__(self):
+    def __init__(self, executable='/usr/local/bin/youtube-dl'):
         super().__init__()
+        self.executable = executable
         self.global_opts = []
         self.process_ids = {}
         self.link = ""
@@ -39,14 +40,14 @@ class YoutubeDl:
         return self
 
     def args(self):
-        result = ["/usr/local/bin/youtube-dl"]
+        result = [self.executable]
         result += self.global_opts
         result.append(self.link)
         return result
 
     def run(self, wait=True):
+        print(self.args())
         if wait is True:
-            print(self.args())
             process = subprocess.Popen(self.args(), stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=False)
             self.process_ids[self.link] = process
             output, errors = process.communicate()

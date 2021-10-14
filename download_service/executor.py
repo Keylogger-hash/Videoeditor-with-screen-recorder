@@ -4,6 +4,7 @@ import traceback
 from queue import Queue
 from download_service.youtubedl_wrap import download_video
 from concurrent.futures import ThreadPoolExecutor, Future
+import os
 from download_service.youtubedl_wrap import stop_download_video
 from download_service.common import IPCType, IPCMessage, TaskStatus
 from functools import partial
