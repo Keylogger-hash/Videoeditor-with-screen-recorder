@@ -9,7 +9,7 @@ from flask import Blueprint, current_app, request
 from jsonschema import validate, ValidationError
 from database.datamodel import videos
 from processing_service.common import TaskStatus
-from processing_service.paths import UPLOADS_LOCATION, CUTS_LOCATION
+from settings import DOWNLOADS_LOCATION, CUTS_LOCATION
 
 api = Blueprint('cutvideo_api', __name__)
 
@@ -216,7 +216,7 @@ def start_videocut(db):
 # DEBUG METHOD SHOULD BE REMOVED
 @api.get('/_uploads/')
 def list_uploads():
-    uploaded_videos = [os.path.basename(name) for name in glob.glob('{}/*.[Mm][Pp]4'.format(UPLOADS_LOCATION),)]
+    uploaded_videos = [os.path.basename(name) for name in glob.glob('{}/*.[Mm][Pp]4'.format(DOWNLOADS_LOCATION),)]
     return {
         'success': True,
         'uploads': sorted(uploaded_videos)

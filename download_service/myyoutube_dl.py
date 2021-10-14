@@ -1,6 +1,4 @@
 import subprocess
-import os
-import signal
 import youtube_dl
 
 class Error(BaseException):

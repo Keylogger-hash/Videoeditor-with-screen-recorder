@@ -2,10 +2,10 @@ import logging
 import typing
 import traceback
 from queue import Queue
-from youtubedl_wrap import download_video
+from download_service.youtubedl_wrap import download_video
 from concurrent.futures import ThreadPoolExecutor, Future
-from youtubedl_wrap import stop_download_video
-from common import IPCType, IPCMessage, TaskStatus
+from download_service.youtubedl_wrap import stop_download_video
+from download_service.common import IPCType, IPCMessage, TaskStatus
 from functools import partial
 from threading import Event
 

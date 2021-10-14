@@ -1,15 +1,12 @@
-import os
 import json
 import zmq
-import glob
+import uuid
+import youtube_dl
 from sqlalchemy import create_engine
 from sqlalchemy.sql import select
 from flask import Blueprint, current_app, request
 from database.datamodel import videos, download_videos
-import uuid
-import youtube_dl
 from download_service.common import TaskStatus
-# from download_service.paths import DOWNLOADS_LOCATION
 
 
 api = Blueprint('downloadvideo_api', __name__)

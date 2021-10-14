@@ -1,6 +1,5 @@
 from threading import Event
-from myyoutube_dl import YoutubeDl
-import subprocess
+from download_service.myyoutube_dl import YoutubeDl
 
 dls_opt = {"ratelimit": 1000000000}
 

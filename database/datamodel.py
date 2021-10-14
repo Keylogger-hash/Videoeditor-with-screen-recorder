@@ -1,8 +1,6 @@
-import typing
-from sqlalchemy import MetaData, Table, Text, Column, String, Integer, DateTime
+from sqlalchemy import MetaData, Table, Column, String, Integer, DateTime
 from sqlalchemy.dialects.postgresql import UUID
 from processing_service.common import TaskStatus
-from sqlalchemy.dialects.postgresql import UUID
 metadata = MetaData()
 
 videos = Table('videos', metadata,
