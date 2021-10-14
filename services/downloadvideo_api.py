@@ -2,6 +2,7 @@ import json
 import zmq
 import uuid
 import youtube_dl
+from base64 import b32encode
 from sqlalchemy import create_engine
 from sqlalchemy.sql import select
 from flask import Blueprint, current_app, request
@@ -123,7 +124,7 @@ def start_downloading():
         info_dict = youtube_dl.YoutubeDL().extract_info(url=data["link"], download=False)
         video_id = uuid.uuid4()
         # TODO: check extension somehow
-        output_filename = '{}.mp4'.format(b32encode(video_id.bytes).strip(b'=').lower())
+        output_filename = b32encode(video_id.bytes).strip(b'=').lower().decode('ascii') + '.mp4'
         dbe.execute(
             download_videos.insert().values(
                 video_id=video_id,
@@ -131,7 +132,7 @@ def start_downloading():
                 link=data["link"],
                 quality=data['quality'],
                 title=info_dict['title'],
-                status=TaskStatus.INACTIVE
+                status=TaskStatus.INACTIVE.value
             )
         )
 

@@ -30,7 +30,7 @@ def upload_video():
         video_id = uuid.uuid4()
         now = datetime.datetime.now()
         _, file_ext = os.path.splitext(uploaded_file.filename)
-        output_filename = '{}{}'.format(b32encode(video_id.bytes).strip(b'=').lower(), file_ext)
+        output_filename = b32encode(video_id.bytes).strip(b'=').lower().decode('ascii') + file_ext
         db.execute(download_videos.insert().values(
             video_id=video_id,
             filename=output_filename,
@@ -39,7 +39,7 @@ def upload_video():
             quality=None,
             task_begin=now,
             task_end=now,
-            status=TaskStatus.COMPLETED
+            status=TaskStatus.COMPLETED.value
         ))
         uploaded_file.save(DOWNLOADS_LOCATION, output_filename)
         return {

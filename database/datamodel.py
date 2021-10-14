@@ -21,5 +21,5 @@ download_videos = Table('download_videos', metadata,
     Column('quality', String, nullable=True, default='default'),
     Column('task_begin', DateTime, nullable=True),
     Column('task_end', DateTime, nullable=True),
-    Column('status', Integer, nullable=False, default=TaskStatus.INACTIVE),
+    Column('status', Integer, nullable=False, default=TaskStatus.INACTIVE.value),
 )
