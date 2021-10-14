@@ -9,10 +9,10 @@ from concurrent.futures import Future
 from threading import Event, Thread
 from queue import Queue, Empty as QueueIsEmpty
 from sqlalchemy import create_engine
-from executor import FFmpegThreadExecutor
-from common import IPCMessage, IPCType, TaskStatus
-from paths import UPLOADS_LOCATION, CUTS_LOCATION
+from processing_service.executor import FFmpegThreadExecutor
+from processing_service.common import IPCMessage, IPCType, TaskStatus
 from database.datamodel import videos
+from settings import DOWNLOADS_LOCATION
 
 WORKER_IPC_POLL = 10000
 EXTERNAL_IPC_POLL = 10000
@@ -148,7 +148,7 @@ def start_server(address: str, worker: ProcessingWorker) -> None:
                             raise ValueError('Incorrect keepStreams option value')
                         if (request['startAt'] < 0) or (request['endAt'] < 0) or (request['startAt'] > request['endAt']):
                             raise ValueError('Incorrect range')
-                        if not os.path.isfile(os.path.join(UPLOADS_LOCATION, request['input'])):
+                        if not os.path.isfile(os.path.join(DOWNLOADS_LOCATION, request['input'])):
                             raise IOError('Source not found')
                         worker.add_task(
                             request['input'],

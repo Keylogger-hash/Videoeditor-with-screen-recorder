@@ -195,7 +195,7 @@ def start_videocut(db):
             videos.insert().values(
                 output_filename=data['destination'],
                 source=data['source'],
-                status=TaskStatus.INACTIVE,
+                status=TaskStatus.INACTIVE.value,
                 progress=0
             )
         )

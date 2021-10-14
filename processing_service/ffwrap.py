@@ -1,7 +1,7 @@
 import os
 import typing as t
 from threading import Event
-from myff import FFprobe, FFmpeg, Error as FFmpegError
+from processing_service.myff import FFprobe, FFmpeg, Error as FFmpegError
 
 ERROR_INCORRECT_ARGUMENTS = 500
 ERROR_PROBE_FAILED = 510
