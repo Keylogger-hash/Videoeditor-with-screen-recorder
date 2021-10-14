@@ -52,7 +52,7 @@ class DownloadVideoApi(object):
 
 @api.get('downloads/')
 def list_tasks_of_downloading():
-    dbe = create_engine(current_app.config.get('database'))
+    dbe = create_engine(current_app.config.get('DATABASE'))
     result = dbe.execute(select([download_videos])).fetchall()
     return {
         "success": True,
@@ -71,7 +71,7 @@ def list_tasks_of_downloading():
 @api.get("downloads/<id>/info")
 def get_downloading_info():
     data = request.json
-    dbe = create_engine(current_app.config.get('database'))
+    dbe = create_engine(current_app.config.get('DATABASE'))
     result = dbe.execute(select([download_videos]).where(download_videos.c.link == data["link"]))
     if result is None:
         return {
@@ -89,13 +89,13 @@ def get_downloading_info():
 
 @api.delete('downloads/<id>/cancel')
 def stop_downloading_video(id):
-    dbe = create_engine(current_app.config.get('database'))
+    dbe = create_engine(current_app.config.get('DATABASE'))
     result = dbe.execute(select([download_videos]).where(download_videos.c.video_id == id)).fetchone()
     if result is None:
         return {'success': False, 'error': "Record doesn't exist"}
 
     if result['status'] in (TaskStatus.WAITING, TaskStatus.WORKING, TaskStatus.INACTIVE):
-        download_service = DownloadVideoApi(current_app.config.get('download_service_addr'))
+        download_service = DownloadVideoApi(current_app.config.get('DOWNLOAD_SERVICE_ADDR'))
         resp = download_service.stop(result['link'])
         print(resp)
 
@@ -105,7 +105,7 @@ def stop_downloading_video(id):
 @api.post('downloads/')
 def start_downloading():
     data = request.json
-    dbe = create_engine(current_app.config.get('database'))
+    dbe = create_engine(current_app.config.get('DATABASE'))
     result = dbe.execute(select([download_videos.c.status]).where(download_videos.c.link == data['link'])).fetchone()
     if result is not None and result == TaskStatus.COMPLETED:
         return {
@@ -138,7 +138,7 @@ def start_downloading():
     else:
         output_filename = result['filename']
 
-    download_service = DownloadVideoApi(current_app.config.get('download_service_addr'))
+    download_service = DownloadVideoApi(current_app.config.get('DOWNLOAD_SERVICE_ADDR'))
     resp = download_service.start(data["link"], output_filename)
     if resp["ok"]:
         return {"success": resp['ok']}
