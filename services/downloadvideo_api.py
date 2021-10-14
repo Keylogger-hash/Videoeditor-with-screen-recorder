@@ -6,9 +6,10 @@ from sqlalchemy import create_engine
 from sqlalchemy.sql import select
 from flask import Blueprint, current_app, request
 from database.datamodel import videos, download_videos
-from youtube_dl import YoutubeDL
+import uuid
+import youtube_dl
 from download_service.common import TaskStatus
-from download_service.paths import DOWNLOADS_LOCATION
+# from download_service.paths import DOWNLOADS_LOCATION
 
 
 api = Blueprint('downloadvideo_api', __name__)
@@ -88,20 +89,10 @@ def get_downloading_info():
         }
 
 
-# @api.get('downloads/<id>/progress')
-# def get_downloading_progress(id):
-#     download_service = DownloadVideoApi(current_app.config.get('download_service_addr'))
-#     resp = download_service.get_proggress(id)
-#     if resp["ok"]:
-#         return {"success": resp["ok"], "data": resp}
-#     else:
-#         return {"success": resp["ok"], "error": resp["error"]}
-
-
 @api.delete('downloads/<id>/cancel')
 def stop_downloading_video(id):
     dbe = create_engine(current_app.config.get('database'))
-    result = dbe.execute(select[download_videos].where(download_videos.c.video_id == id)).fetchone()
+    result = dbe.execute(select([download_videos]).where(download_videos.c.video_id == id)).fetchone()
     if result is None:
         return {'success': False, 'error': "Record doesn't exist"}
 
@@ -117,8 +108,8 @@ def stop_downloading_video(id):
 def start_downloading():
     data = request.json
     dbe = create_engine(current_app.config.get('database'))
-    result = dbe.execute(select([download_videos.c.status]).where(download_videos.c.link == data['link']))
-
+    result = dbe.execute(select([download_videos.c.status]).where(download_videos.c.link == data['link'])).fetchone()
+    print(result)
     if result is not None and result == TaskStatus.COMPLETED:
         return {
             "success": False,
@@ -133,12 +124,14 @@ def start_downloading():
 
     elif result is None:
         info_dict = youtube_dl.YoutubeDL().extract_info(url=data["link"], download=False)
+        uuid4 = uuid.uuid4()
         dbe.execute(
-            download_videos.insert.values(
+            download_videos.insert().values(
+                video_id=uuid4,
                 link=data["link"],
-                quality=data["quality"],
-                status=TaskStatus.INACTIVE,
-                title=info_dict['title']
+                quality=data['quality'],
+                title=info_dict['title'],
+                status=TaskStatus.INACTIVE
             )
         )
 
@@ -149,3 +142,5 @@ def start_downloading():
         return {"success": resp['ok']}
     else:
         return {"success": resp["ok"], "error": resp["error"]}
+
+

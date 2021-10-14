@@ -1,7 +1,10 @@
+import sys
+import os
+sys.path.append(os.getcwd())
+
 import logging
 import datetime
 import json
-import os
 import zmq
 import typing
 from concurrent.futures import Future
@@ -9,9 +12,10 @@ from threading import Event, Thread
 from queue import Queue, Empty as QueueIsEmpty
 from sqlalchemy import create_engine
 from flask import current_app
-from .database.datamodel import download_videos
+from database.datamodel import download_videos
 from common import IPCMessage, IPCType, TaskStatus
 from executor import YoutubeDlExecutor
+
 
 
 WORKER_IPC_POLL = 10000
@@ -119,7 +123,7 @@ def start_server(address: str, tasks_limit: int):
     while not quit_event.is_set():
         socks = poller.poll(10000)
         for sock, _ in socks:
-            reply=None
+            reply = None
             try:
                 request = json.loads(sock.recv().decode('UTF-8'))
                 if request['method'] == 'ping':
@@ -143,6 +147,6 @@ def start_server(address: str, tasks_limit: int):
                 pass
 
 
-if __name__ == "__main__":
-    download_service_addr = 'tcp://127.0.0.1:6536'
-    start_server(download_service_addr, 10)
+#if __name__ == "__main__":
+#    download_service_addr = 'tcp://127.0.0.1:6536'
+#    start_server(download_service_addr, 10)

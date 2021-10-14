@@ -1,1 +1,0 @@
-DOWNLOADS_LOCATION = 'downloads'
