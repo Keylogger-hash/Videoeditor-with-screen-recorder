@@ -2,10 +2,11 @@ import os
 import uuid
 import datetime
 from base64 import b32encode
-from flask import Flask, request, current_app
+from functools import partial
+from flask import Flask, request, current_app, send_from_directory
 from sqlalchemy import create_engine
 from services import cutvideo_api, downloadvideo_api
-from settings import DOWNLOADS_LOCATION
+from settings import DOWNLOADS_LOCATION, CUTS_LOCATION
 from download_service.common import TaskStatus
 from database.datamodel import download_videos
 
@@ -22,7 +23,7 @@ def upload_video():
     if not 'upload' in request.files:
         return {
             'success': False,
-            'error': 'No file sent for uploading'
+            'error': 'No file uploaded'
         }
     uploaded_file = request.files['upload']
     if uploaded_file:
@@ -44,16 +45,22 @@ def upload_video():
         uploaded_file.save(os.path.join(DOWNLOADS_LOCATION, output_filename))
         return {
             "success": True,
-            "error": None
+            "result": {
+                "videoId": video_id
+            }
         }
     return {
         "success": False,
-        "error": "Video can't upload"
+        "error": "No file uploaded"
     }
 
 app.register_blueprint(cutvideo_api.api, url_prefix='/api')
 app.register_blueprint(downloadvideo_api.api, url_prefix='/api')
 app.config.from_object('settings')
+
+# NOTE: serve files, do not use in production
+app.add_url_rule('/files/uploads/<path:path>', 'serve_uploads', view_func=partial(send_from_directory, DOWNLOADS_LOCATION))
+app.add_url_rule('/files/cuts/<path:path>', 'serve_cuts', view_func=partial(send_from_directory, CUTS_LOCATION))
 
 if __name__ == "__main__":
     app.run(debug=True)
