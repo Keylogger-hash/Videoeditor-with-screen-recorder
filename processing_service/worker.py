@@ -13,7 +13,7 @@ from processing_service.executor import FFmpegThreadExecutor
 from processing_service.common import IPCType, TaskStatus
 from shared.zmqserver import ZMQServer
 from database.datamodel import videos
-from settings import DOWNLOADS_LOCATION
+from settings import DOWNLOADS_LOCATION as UPLOADS_LOCATION
 
 WORKER_IPC_POLL = 1000
 

@@ -41,7 +41,7 @@ def upload_video():
             task_end=now,
             status=TaskStatus.COMPLETED.value
         ))
-        uploaded_file.save(DOWNLOADS_LOCATION, output_filename)
+        uploaded_file.save(os.path.join(DOWNLOADS_LOCATION, output_filename))
         return {
             "success": True,
             "error": None

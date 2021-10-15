@@ -8,7 +8,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.sql import select
 from flask import Blueprint, current_app, request
 from jsonschema import validate, ValidationError
-from database.datamodel import videos
+from database.datamodel import videos, download_videos as source_videos
 from processing_service.common import TaskStatus
 from settings import DOWNLOADS_LOCATION, CUTS_LOCATION
 
@@ -175,6 +175,7 @@ def delete_cut(output_name, db):
 @requires_db
 def start_videocut(db):
     data = request.json
+    source_name = None
     try:
         validate(data, TASK_ADD_REQUEST_SCHEMA)
     except ValidationError as e:
@@ -183,13 +184,21 @@ def start_videocut(db):
             'error': 'Invalid request: {}'.format(e.message)
         }
     videoservice = CutVideoService(current_app.config.get('VIDEOCUT_SERVICE_ADDR'))
-    result = db.execute(select([videos.c.status]).where(videos.c.output_filename == data['destination'])).fetchone()
+    video_cut = db.execute(select([videos.c.status, videos.c.source]).where(videos.c.output_filename == data['destination'])).fetchone()
     # NOTE: allowing retrying complete task with same output name is meaningless a bit - should be reconsidered
-    if result is not None and result['status'] in (TaskStatus.FAILED, TaskStatus.COMPLETED, TaskStatus.INACTIVE):  # restarting completed/failed task
+    if video_cut is not None and video_cut['status'] in (TaskStatus.FAILED, TaskStatus.COMPLETED, TaskStatus.INACTIVE):  # restarting completed/failed task
         db.execute(
             videos.update().where(videos.c.output_filename == data['destination']).values(status=TaskStatus.INACTIVE, progress=0)
         )
-    elif result is None:  # creating new task
+        source_name = video_cut['source']
+        source_video = db.execute(select([source_videos.c.filename]).where(source_videos.c.video_id == video_cut['source'])).fetchone()
+        if source_video is None:
+            return {'success': False, 'error': 'Missing source video'}
+    elif video_cut is None:  # creating new task
+        source_name = data['source']
+        source_video = db.execute(select([source_videos.c.filename]).where(source_videos.c.video_id == data['source'])).fetchone()
+        if source_video is None:
+            return {'success': False, 'error': 'Missing source video'}
         db.execute(
             videos.insert().values(
                 output_filename=data['destination'],
@@ -204,11 +213,12 @@ def start_videocut(db):
             'error': 'Task is active'
         }
     try:
-        resp = videoservice.start(data['source'], data['destination'], data['startAt'], data['endAt'], data['keepStreams'])
+        print(source_video['filename'])
+        resp = videoservice.start(source_video['filename'], data['destination'], data['startAt'], data['endAt'], data['keepStreams'])
     except:
         return { 'success': False, 'error': 'Failed to request service' }
     if resp['ok']:
-        return { 'success': True }
+        return { 'success': True, 'result': { 'source': source_name, 'result': data['destination'] } }
     else:
         return { 'success': False, 'error': resp['error'] }
 
