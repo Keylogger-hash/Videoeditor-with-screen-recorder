@@ -1,11 +1,11 @@
-import logging
-from worker import start_server
-from settings import context, DOWNLOAD_SERVICE_ADDR
-from worker import DatabaseChangingProcessing
 import sys
 import os
 
 sys.path.append(os.getcwd())
-worker = DatabaseChangingProcessing(context['DATABASE_URL'], 4)
+import logging
+from settings import context, DOWNLOAD_SERVICE_ADDR
+from worker import ProcessingTasks, start_server
+
+worker = ProcessingTasks(database_url=context['DATABASE_URL'], tasks_limit=5)
 logging.basicConfig(level=logging.DEBUG)
-start_server(DOWNLOAD_SERVICE_ADDR, 10)
+start_server(DOWNLOAD_SERVICE_ADDR, worker)

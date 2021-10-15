@@ -1,6 +1,7 @@
 from enum import IntEnum
 import typing
 
+
 class TaskStatus(IntEnum):
     INACTIVE = 0
     QUEUED = 1
@@ -8,11 +9,13 @@ class TaskStatus(IntEnum):
     COMPLETED = 3
     FAILED = 4
 
+
 class IPCType(IntEnum):
     ADD = 0
     PROGRESS = 1
     STATUS = 2
     REMOVE_TASK = 3
+
 
 class IPCMessage(object):
     def __init__(self, message_type: IPCType, subject: str, data: typing.Any=None) -> None:

@@ -150,9 +150,9 @@ def start_videocut():
         }
     resp = videoservice.start(data['source'], data['destination'], data['startAt'], data['endAt'], data['keepStreams'])
     if resp['ok']:
-        return { 'success': True }
+        return {'success': True}
     else:
-        return { 'success': False, 'error': resp['error'] }
+        return {'success': False, 'error': resp['error']}
 
 
 @api.delete('/cuts/')

@@ -21,6 +21,7 @@ download_videos = Table('download_videos', metadata,
     Column('task_begin', DateTime, nullable=True),
     Column('task_end', DateTime, nullable=True),
     Column('status', Integer, nullable=False, default=TaskStatus.INACTIVE),
+    Column('filename', String, nullable=False)
 )
 
 uploads = Table('source_videos', metadata,
