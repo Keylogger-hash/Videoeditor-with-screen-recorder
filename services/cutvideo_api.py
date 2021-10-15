@@ -4,6 +4,7 @@ import zmq
 import glob
 import typing
 import functools
+from uuid import uuid4
 from sqlalchemy import create_engine
 from sqlalchemy.sql import select
 from flask import Blueprint, current_app, request
@@ -16,35 +17,54 @@ api = Blueprint('cutvideo_api', __name__)
 
 TASK_ADD_REQUEST_SCHEMA = {
     'type': 'object',
-    'required': [
-        'source',
-        'destination',
-        'startAt',
-        'endAt',
-        'keepStreams'
-    ],
-    'properties': {
-        'source': {
-            'type': 'string'
+    'oneOf': [
+        {
+            'type': 'object',
+            'required': [ 'source', 'startAt', 'endAt', 'keepStreams' ],
+            'properties': {
+                'source': {
+                    'type': 'string'
+                },
+                'startAt': {
+                    'type': 'number',
+                    'minimum': 0
+                },
+                'endAt': {
+                    'type': 'number',
+                    'minimum': 0
+                },
+                'keepStreams': {
+                    'type': 'string',
+                    'enum': [
+                        'both', 'video', 'audio'
+                    ]
+                }
+            }
         },
-        'destination': {
-            'type': 'string'
-        },
-        'startAt': {
-            'type': 'number',
-            'minimum': 0
-        },
-        'endAt': {
-            'type': 'number',
-            'minimum': 0
-        },
-        'keepStreams': {
-            'type': 'string',
-            'enum': [
-                'both', 'video', 'audio'
-            ]
+        {
+            'type': 'object',
+            'required': [ 'destination', 'startAt', 'endAt', 'keepStreams' ],
+            'properties': {
+                'destination': {
+                    'type': 'string'
+                },
+                'startAt': {
+                    'type': 'number',
+                    'minimum': 0
+                },
+                'endAt': {
+                    'type': 'number',
+                    'minimum': 0
+                },
+                'keepStreams': {
+                    'type': 'string',
+                    'enum': [
+                        'both', 'video', 'audio'
+                    ]
+                }
+            }
         }
-    }
+    ]
 }
 
 def get_link_to_cut_video(video_name: str) -> str:
@@ -176,6 +196,7 @@ def delete_cut(output_name, db):
 def start_videocut(db):
     data = request.json
     source_name = None
+    output_name = None
     try:
         validate(data, TASK_ADD_REQUEST_SCHEMA)
     except ValidationError as e:
@@ -184,41 +205,45 @@ def start_videocut(db):
             'error': 'Invalid request: {}'.format(e.message)
         }
     videoservice = CutVideoService(current_app.config.get('VIDEOCUT_SERVICE_ADDR'))
-    video_cut = db.execute(select([videos.c.status, videos.c.source]).where(videos.c.output_filename == data['destination'])).fetchone()
-    # NOTE: allowing retrying complete task with same output name is meaningless a bit - should be reconsidered
-    if video_cut is not None and video_cut['status'] in (TaskStatus.FAILED, TaskStatus.COMPLETED, TaskStatus.INACTIVE):  # restarting completed/failed task
-        db.execute(
-            videos.update().where(videos.c.output_filename == data['destination']).values(status=TaskStatus.INACTIVE, progress=0)
-        )
-        source_name = video_cut['source']
-        source_video = db.execute(select([source_videos.c.filename]).where(source_videos.c.video_id == video_cut['source'])).fetchone()
-        if source_video is None:
-            return {'success': False, 'error': 'Missing source video'}
-    elif video_cut is None:  # creating new task
+
+    if 'source' in data:
         source_name = data['source']
+        file_ext = '.mp4' if data['keepStreams'] in ('both', 'video') else '.mp3'
+        output_name = '{}{}'.format(uuid4(), file_ext)
         source_video = db.execute(select([source_videos.c.filename]).where(source_videos.c.video_id == data['source'])).fetchone()
         if source_video is None:
             return {'success': False, 'error': 'Missing source video'}
         db.execute(
             videos.insert().values(
-                output_filename=data['destination'],
+                output_filename=output_name,
                 source=data['source'],
                 status=TaskStatus.INACTIVE.value,
                 progress=0
             )
         )
-    else:  # task is queued/in progress
-        return {
-            'success': False,
-            'error': 'Task is active'
-        }
+    else:
+        video_cut = db.execute(select([videos.c.status, videos.c.source]).where(videos.c.output_filename == data['destination'])).fetchone()
+        # NOTE: allowing retrying complete task with same output name is meaningless a bit - should be reconsidered
+        if video_cut is not None and video_cut['status'] in (TaskStatus.FAILED, TaskStatus.COMPLETED, TaskStatus.INACTIVE):  # restarting completed/failed task
+            db.execute(
+                videos.update().where(videos.c.output_filename == data['destination']).values(status=TaskStatus.INACTIVE, progress=0)
+            )
+            source_name = video_cut['source']
+            output_name = data['destination']
+            source_video = db.execute(select([source_videos.c.filename]).where(source_videos.c.video_id == video_cut['source'])).fetchone()
+            if source_video is None:
+                return {'success': False, 'error': 'Missing source video'}
+        else:  # task is queued/in progress
+            return {
+                'success': False,
+                'error': 'Task is active'
+            }
     try:
-        print(source_video['filename'])
-        resp = videoservice.start(source_video['filename'], data['destination'], data['startAt'], data['endAt'], data['keepStreams'])
+        resp = videoservice.start(source_video['filename'], output_name, data['startAt'], data['endAt'], data['keepStreams'])
     except:
         return { 'success': False, 'error': 'Failed to request service' }
     if resp['ok']:
-        return { 'success': True, 'result': { 'source': source_name, 'result': data['destination'] } }
+        return { 'success': True, 'result': { 'source': source_name, 'output': output_name } }
     else:
         return { 'success': False, 'error': resp['error'] }
 
