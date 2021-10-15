@@ -11,19 +11,22 @@ from queue import Queue, Empty as QueueIsEmpty
 from sqlalchemy import create_engine
 from processing_service.executor import FFmpegThreadExecutor
 from processing_service.common import IPCType, TaskStatus
-from processing_service.paths import UPLOADS_LOCATION
 from shared.zmqserver import ZMQServer
 from database.datamodel import videos
+from settings import DOWNLOADS_LOCATION
 
 WORKER_IPC_POLL = 1000
 
+
 class WorkerTask(object):
     __slots__ = ['output_filename', 'deferred_task', 'progress', 'status']
+
     def __init__(self, output_filename: str, deferred_task: Future) -> None:
         self.output_filename = output_filename # type: str
         self.deferred_task = deferred_task # type: Future
         self.progress = 0 # type: float
         self.status = TaskStatus.QUEUED # type: TaskStatus
+
 
 class ProcessingWorker(Thread):
     def __init__(self, task_limit: int) -> None:
@@ -94,6 +97,7 @@ class ProcessingWorker(Thread):
             self.exit_event.set()
             self.ffmpeg_executor.shutdown()
             logging.info('Force stop worker')
+
 
 class DatabaseProcessingWorker(ProcessingWorker):
     def __init__(self, database_url, tasks_limit):
@@ -173,6 +177,7 @@ class VideoServiceListener(ZMQServer):
 
 def start_server(address: str, worker: ProcessingWorker) -> None:
     quit_event = Event()
+
     def signal_handler(*args):
         print('Got SIGTERM')
         quit_event.set()
@@ -199,7 +204,7 @@ def start_server(address: str, worker: ProcessingWorker) -> None:
                             raise ValueError('Incorrect keepStreams option value')
                         if (request['startAt'] < 0) or (request['endAt'] < 0) or (request['startAt'] > request['endAt']):
                             raise ValueError('Incorrect range')
-                        if not os.path.isfile(os.path.join(UPLOADS_LOCATION, request['input'])):
+                        if not os.path.isfile(os.path.join(DOWNLOADS_LOCATION, request['input'])):
                             raise IOError('Source not found')
                         worker.add_task(
                             request['input'],

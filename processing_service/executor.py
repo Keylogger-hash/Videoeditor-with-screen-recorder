@@ -8,7 +8,8 @@ from functools import partial
 from threading import Event
 from processing_service.common import IPCType, IPCMessage, TaskStatus
 from processing_service.ffwrap import convert_file
-from processing_service.paths import UPLOADS_LOCATION, CUTS_LOCATION
+from settings import DOWNLOADS_LOCATION, CUTS_LOCATION
+
 
 class FFmpegThreadExecutor(object):
     def __init__(self, datastream: Queue, workers_queue: int=3) -> None:
@@ -49,7 +50,7 @@ class FFmpegThreadExecutor(object):
             self.task_stoppers[output_filename] = exit_event
             task_future = self.ex.submit(
                 convert_file,
-                os.path.join(UPLOADS_LOCATION, input_filename),
+                os.path.join(DOWNLOADS_LOCATION, input_filename),
                 os.path.join(CUTS_LOCATION, output_filename),
                 start_at,
                 end_at,
