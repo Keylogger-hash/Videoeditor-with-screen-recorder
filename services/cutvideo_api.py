@@ -264,3 +264,4 @@ def add_cors_headers(response):
     headers['Access-Control-Allow-Methods'] = 'GET,POST,DELETE'
     headers['Access-Control-Allow-Headers'] = 'Content-Type'
     return response
+
