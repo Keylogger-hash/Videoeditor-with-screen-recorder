@@ -14,8 +14,8 @@ from queue import Queue, Empty as QueueIsEmpty
 from sqlalchemy import create_engine
 from flask import current_app
 from database.datamodel import download_videos
-from common import IPCMessage, IPCType, TaskStatus
-from executor import YoutubeDlExecutor
+from download_service.common import IPCMessage, IPCType, TaskStatus
+from download_service.executor import YoutubeDlExecutor
 
 
 WORKER_IPC_POLL = 10000

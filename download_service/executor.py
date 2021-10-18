@@ -3,10 +3,10 @@ import os
 import typing
 import traceback
 from queue import Queue
-from youtubedl_wrap import download_video
+from download_service.youtubedl_wrap import download_video
 from concurrent.futures import ThreadPoolExecutor, Future
 from settings import DOWNLOADS_LOCATION
-from common import IPCType, IPCMessage, TaskStatus
+from download_service.common import IPCType, IPCMessage, TaskStatus
 from functools import partial
 from threading import Event
 
@@ -52,7 +52,7 @@ class YoutubeDlExecutor:
                 download_video,
                 link,
                 format_id,
-                destination,
+                os.path.join(DOWNLOADS_LOCATION, destination),
                 exit_event,
                 partial(self.task_started, link)
             )

@@ -57,29 +57,28 @@ class DownloadVideoApi(object):
 
 @api.get('downloads/')
 def list_of_records():
-    dbe = create_engine(current_app.config.get('database'))
+    dbe = create_engine(current_app.config.get('DATABASE'))
     result = dbe.execute(select([download_videos])).fetchall()
     return {
         "success": True,
         "downloads": [
             {
-                "video_id": item["video_id"],
+                "id": item['video_id'],
+                "title": item['title'],
+                "filename": item['filename'],
                 "link": item["link"],
                 "quality": item["quality"],
-                "filename": item["filename"],
-                "status": item["status"]
+                "status": TaskStatus(item["status"]).name
             }
             for item in result
         ]
     }
 
 
-@api.get("downloads/<id>/info")
-def get_info_download_video(id):
-    data = request.json
-    dbe = create_engine(current_app.config.get('database'))
-    result = dbe.execute(select([download_videos]).where(download_videos.c.video_id == id)).fetchone()
-    print(result)
+@api.get("downloads/<video_id>/info")
+def get_downloading_info(video_id):
+    dbe = create_engine(current_app.config.get('DATABASE'))
+    result = dbe.execute(select([download_videos]).where(download_videos.c.video_id == video_id)).fetchone()
     if result is None:
         return {
             "success": False,
@@ -88,13 +87,14 @@ def get_info_download_video(id):
     else:
         return {
             "success": True,
-            "record": {
-                "video_id": result["video_id"],
-                "output_filename": result["filename"],
+            "result": {
+                "id": result['video_id'],
+                "title": result['title'],
+                "filename": result['filename'],
                 "link": result["link"],
                 "title": result["title"],
-                "status": result["status"],
-                "quality": result["quality"]
+                "quality": result["quality"],
+                "status": TaskStatus(result['status']).name
             }
         }
 
@@ -131,19 +131,19 @@ def get_info_about_youtube_video():
     }
 
 
-@api.delete('downloads/<id>/cancel')
-def stop_downloading_video(id):
-    dbe = create_engine(current_app.config.get('database'))
-    result = dbe.execute(select([download_videos]).where(download_videos.c.video_id == id)).fetchone()
+@api.delete('downloads/<video_id>/cancel')
+def stop_downloading_video(video_id):
+    dbe = create_engine(current_app.config.get('DATABASE'))
+    result = dbe.execute(select([download_videos]).where(download_videos.c.video_id == video_id)).fetchone()
     if result is None:
         return {'success': False, 'error': "Record doesn't exist"}
 
     if result['status'] in (TaskStatus.WAITING, TaskStatus.WORKING, TaskStatus.INACTIVE):
-        download_service = DownloadVideoApi(current_app.config.get('download_service_addr'))
+        download_service = DownloadVideoApi(current_app.config.get('DOWNLOAD_SERVICE_ADDR'))
         resp = download_service.stop(result['link'])
         print(resp)
-    dbe.execute(download_videos.delete().where(download_videos.c.video_id == id))
-    path = os.path.join(DOWNLOADS_LOCATION, result['filename'])
+    dbe.execute(download_videos.delete().where(download_videos.c.video_id == video_id))
+    path = os.path.join(DOWNLOADS_LOCATION, os.path.dirname(result['filename']))
     # path_to_mp4_file = os.listdir(path)
     # final_path = os.path.join(path, path_to_mp4_file[0])
     if os.path.isdir(path):
@@ -155,9 +155,8 @@ def stop_downloading_video(id):
 @api.post('downloads/')
 def start_downloading():
     data = request.json
-    dbe = create_engine(current_app.config.get('database'))
+    dbe = create_engine(current_app.config.get('DATABASE'))
     result = dbe.execute(select([download_videos.c.status]).where(download_videos.c.link == data['link'])).fetchone()
-    print(result)
     if result is not None and result == TaskStatus.COMPLETED:
         return {
             "success": False,
@@ -170,37 +169,46 @@ def start_downloading():
             "error": "Task is active"
         }
 
-    elif result is None:
-        title = data['title']
-        format_video = data['format']
-        format_ext = data['ext']
-        format_id = data['format_id']
-        quality = f"{format_ext} - {format_id} - {format_video}"
+    format_ext = 'mp4'
+    format_id = data['format_id']
+    if result is None:
+        video_info = youtube_dl.YoutubeDL().extract_info(data['link'], download=False)
+        title = video_info['title']
+        for variant in video_info['formats']:
+            if variant['format_id'] == format_id:
+                format_ext = variant['ext']
+                break
+        quality = "{} - {}".format(format_ext, format_id)
         video_id = uuid.uuid4()
-        output_filename = b32encode(video_id.bytes).strip(b'=').lower().decode('ascii')
-        path = os.path.join(DOWNLOADS_LOCATION, output_filename)
-        os.mkdir(path)
+        output_filename = os.path.join(b32encode(video_id.bytes).strip(b'=').lower().decode('ascii'), 'video.' + format_ext)
+        os.makedirs(os.path.dirname(output_filename), exist_ok=True)
         dbe.execute(
             download_videos.insert().values(
                 video_id=video_id,
                 link=data["link"],
                 quality=quality,
                 title=title,
-                status=TaskStatus.INACTIVE,
+                status=TaskStatus.INACTIVE.value,
                 filename=output_filename
             )
         )
     else:
         output_filename = result['filename']
 
-    download_service = DownloadVideoApi(current_app.config.get('download_service_addr'))
+    download_service = DownloadVideoApi(current_app.config.get('DOWNLOAD_SERVICE_ADDR'))
     resp = download_service.start(link=data["link"],
                                   format_id=format_id,
-                                  destination=os.path.join(path, output_filename+f'.{format_ext}'))
+                                  destination=output_filename)
     print(resp)
     if resp["ok"]:
         return {"success": resp['ok'], "video_id": video_id}
     else:
         return {"success": resp["ok"], "error": resp["error"]}
 
-
+@api.after_request
+def add_cors_headers(response):
+    headers = response.headers
+    headers['Access-Control-Allow-Origin'] = '*'
+    headers['Access-Control-Allow-Methods'] = 'GET,POST,DELETE'
+    headers['Access-Control-Allow-Headers'] = 'Content-Type'
+    return response

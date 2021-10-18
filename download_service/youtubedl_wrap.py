@@ -1,6 +1,7 @@
 from threading import Event
 from download_service.myyoutube_dl import YoutubeDl
 import subprocess
+from settings import YOUTUBE_DL_EXECUTABLE
 
 dls_opt = {"ratelimit": 1000000000}
 
@@ -8,7 +9,7 @@ dls_opt = {"ratelimit": 1000000000}
 def download_video(link: str, format_id: int, destination: str, fire_exit: Event = None, start_callback=None):
     if start_callback is not None:
         start_callback()
-    youtubedl = YoutubeDl()
+    youtubedl = YoutubeDl(YOUTUBE_DL_EXECUTABLE)
     proc = youtubedl.input(link).global_args("-q", "--output", destination, "-f", str(format_id)).run(wait=False)
     print(proc)
 
