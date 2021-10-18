@@ -43,7 +43,7 @@ class YoutubeDlExecutor:
         logging.info('Started task: %s', link)
         self.datastream.put(IPCMessage(IPCType.STATUS, link, TaskStatus.WORKING))
 
-    def submit(self, link: str, destination: str):
+    def submit(self, link: str, format_id: int,destination: str):
         exit_event = Event()
         self.task_stoppers[link] = exit_event
         print()
@@ -51,6 +51,7 @@ class YoutubeDlExecutor:
             task_future = self.ex.submit(
                 download_video,
                 link,
+                format_id,
                 destination,
                 exit_event,
                 partial(self.task_started, link)

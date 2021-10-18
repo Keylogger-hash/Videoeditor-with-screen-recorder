@@ -11,7 +11,6 @@ import youtube_dl
 from base64 import b32encode
 from settings import DOWNLOADS_LOCATION
 from download_service.common import TaskStatus
-# from download_service.paths import DOWNLOADS_LOCATION
 
 
 api = Blueprint('downloadvideo_api', __name__)
@@ -36,10 +35,11 @@ class DownloadVideoApi(object):
         socket.close()
         return json.loads(message.decode('UTF-8'))
 
-    def start(self, link: str, destination: str):
+    def start(self, link: str, format_id: int, destination: str):
         return self._send({
             "method": "download",
             "destination": destination,
+            "format_id": format_id,
             "link": link
         })
 
@@ -75,7 +75,7 @@ def list_of_records():
 
 
 @api.get("downloads/<id>/info")
-def get_downloading_info(id):
+def get_info_download_video(id):
     data = request.json
     dbe = create_engine(current_app.config.get('database'))
     result = dbe.execute(select([download_videos]).where(download_videos.c.video_id == id)).fetchone()
@@ -97,6 +97,38 @@ def get_downloading_info(id):
                 "quality": result["quality"]
             }
         }
+
+
+@api.post("downloads/info")
+def get_info_about_youtube_video():
+    data = request.json
+    if data["link"] is None:
+        return {
+            "success": False,
+            "error": "Link is invalid"
+        }
+    link = data["link"]
+    with youtube_dl.YoutubeDL() as ydl:
+        info_dict = ydl.extract_info(link, download=False)
+        formats = info_dict['formats']
+    return {
+        "success": True,
+        "error": None,
+        "title": info_dict["title"],
+        "thumbnails": [{
+            "height": thumbnail["height"],
+            "url": thumbnail["url"],
+            "width": thumbnail["width"],
+            "resolution": thumbnail["resolution"]
+        } for thumbnail in info_dict["thumbnails"]
+        ],
+        "info": [{
+            "format_id": item["format_id"],
+            "ext": item["ext"],
+            "quality": item["format"].split('- ')[1],
+            "fps": item["fps"]
+        } for item in formats]
+    }
 
 
 @api.delete('downloads/<id>/cancel')
@@ -139,7 +171,11 @@ def start_downloading():
         }
 
     elif result is None:
-        info_dict = youtube_dl.YoutubeDL().extract_info(url=data["link"], download=False)
+        title = data['title']
+        format_video = data['format']
+        format_ext = data['ext']
+        format_id = data['format_id']
+        quality = f"{format_ext} - {format_id} - {format_video}"
         video_id = uuid.uuid4()
         output_filename = b32encode(video_id.bytes).strip(b'=').lower().decode('ascii')
         path = os.path.join(DOWNLOADS_LOCATION, output_filename)
@@ -148,8 +184,8 @@ def start_downloading():
             download_videos.insert().values(
                 video_id=video_id,
                 link=data["link"],
-                quality='720p',
-                title=info_dict['title'],
+                quality=quality,
+                title=title,
                 status=TaskStatus.INACTIVE,
                 filename=output_filename
             )
@@ -158,7 +194,9 @@ def start_downloading():
         output_filename = result['filename']
 
     download_service = DownloadVideoApi(current_app.config.get('download_service_addr'))
-    resp = download_service.start(link=data["link"], destination=os.path.join(path, output_filename+'.mp4'))
+    resp = download_service.start(link=data["link"],
+                                  format_id=format_id,
+                                  destination=os.path.join(path, output_filename+f'.{format_ext}'))
     print(resp)
     if resp["ok"]:
         return {"success": resp['ok'], "video_id": video_id}
