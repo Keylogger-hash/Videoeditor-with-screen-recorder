@@ -102,12 +102,18 @@ def get_downloading_info(video_id):
 @api.post("downloads/info")
 def get_info_about_youtube_video():
     data = request.json
-    if data["link"] is None:
+    link = data.get("link", None)
+    if data is None or data == {}:
+        return {
+            "success": False,
+            "error": "Empty body"
+        }
+    if link is None:
         return {
             "success": False,
             "error": "Link is invalid"
         }
-    link = data["link"]
+
     with youtube_dl.YoutubeDL() as ydl:
         info_dict = ydl.extract_info(link, download=False)
         formats = info_dict['formats']
@@ -133,6 +139,7 @@ def get_info_about_youtube_video():
 
 @api.delete('downloads/<video_id>/cancel')
 def stop_downloading_video(video_id):
+
     dbe = create_engine(current_app.config.get('DATABASE'))
     result = dbe.execute(select([download_videos]).where(download_videos.c.video_id == video_id)).fetchone()
     if result is None:
@@ -144,8 +151,7 @@ def stop_downloading_video(video_id):
         print(resp)
     dbe.execute(download_videos.delete().where(download_videos.c.video_id == video_id))
     path = os.path.join(DOWNLOADS_LOCATION, os.path.dirname(result['filename']))
-    # path_to_mp4_file = os.listdir(path)
-    # final_path = os.path.join(path, path_to_mp4_file[0])
+    
     if os.path.isdir(path):
         shutil.rmtree(path)
 
@@ -155,8 +161,28 @@ def stop_downloading_video(video_id):
 @api.post('downloads/')
 def start_downloading():
     data = request.json
+    link = data.get("link", None)
+    format_id = data.get("format_id", None)
+    if data is None or data == {}:
+        return {
+            "success": False,
+            "error": "Empty body"
+        }
+
+    if link is None:
+        return {
+            "success": False,
+            "error": "Invalid link"
+        }
+
+    if format_id is None:
+        return {
+            "success": False,
+            "error": "Format id video is invalid"
+        }
+
     dbe = create_engine(current_app.config.get('DATABASE'))
-    result = dbe.execute(select([download_videos.c.status]).where(download_videos.c.link == data['link'])).fetchone()
+    result = dbe.execute(select([download_videos.c.status]).where(download_videos.c.link == link)).fetchone()
     if result is not None and result == TaskStatus.COMPLETED:
         return {
             "success": False,
@@ -170,7 +196,7 @@ def start_downloading():
         }
 
     format_ext = 'mp4'
-    format_id = data['format_id']
+
     if result is None:
         video_info = youtube_dl.YoutubeDL().extract_info(data['link'], download=False)
         title = video_info['title']
@@ -181,11 +207,11 @@ def start_downloading():
         quality = "{} - {}".format(format_ext, format_id)
         video_id = uuid.uuid4()
         output_filename = os.path.join(b32encode(video_id.bytes).strip(b'=').lower().decode('ascii'), 'video.' + format_ext)
-        os.makedirs(os.path.dirname(output_filename), exist_ok=True)
+
         dbe.execute(
             download_videos.insert().values(
                 video_id=video_id,
-                link=data["link"],
+                link=link,
                 quality=quality,
                 title=title,
                 status=TaskStatus.INACTIVE.value,
@@ -204,6 +230,7 @@ def start_downloading():
         return {"success": resp['ok'], "video_id": video_id}
     else:
         return {"success": resp["ok"], "error": resp["error"]}
+
 
 @api.after_request
 def add_cors_headers(response):
