@@ -139,29 +139,11 @@ def get_info_about_youtube_video():
 
 @api.delete('downloads/<video_id>/cancel')
 def stop_downloading_video(video_id):
-    data = request.json
-    link = data.get("link", None)
-    if data is None or data == {}:
-        return {
-            "success": False,
-            "error": "empty body"
-        }
-    if link is None:
-        return {
-            "success": False,
-            "error": "link is empty"
-        }
 
     dbe = create_engine(current_app.config.get('DATABASE'))
     result = dbe.execute(select([download_videos]).where(download_videos.c.video_id == video_id)).fetchone()
     if result is None:
         return {'success': False, 'error': "Record doesn't exist"}
-
-    if result['link'] != link:
-        return {
-            "success": False,
-            "error": "link mismatch"
-        }
 
     if result['status'] in (TaskStatus.WAITING, TaskStatus.WORKING, TaskStatus.INACTIVE):
         download_service = DownloadVideoApi(current_app.config.get('DOWNLOAD_SERVICE_ADDR'))
@@ -169,8 +151,7 @@ def stop_downloading_video(video_id):
         print(resp)
     dbe.execute(download_videos.delete().where(download_videos.c.video_id == video_id))
     path = os.path.join(DOWNLOADS_LOCATION, os.path.dirname(result['filename']))
-    # path_to_mp4_file = os.listdir(path)
-    # final_path = os.path.join(path, path_to_mp4_file[0])
+    
     if os.path.isdir(path):
         shutil.rmtree(path)
 
