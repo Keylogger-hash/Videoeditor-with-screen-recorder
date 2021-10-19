@@ -31,7 +31,8 @@ def upload_video():
         video_id = uuid.uuid4()
         now = datetime.datetime.now()
         _, file_ext = os.path.splitext(uploaded_file.filename)
-        output_filename = b32encode(video_id.bytes).strip(b'=').lower().decode('ascii') + file_ext
+        output_filename = os.path.join(b32encode(video_id.bytes).strip(b'=').lower().decode('ascii'), 'video' + file_ext)
+        os.makedirs(os.path.join(DOWNLOADS_LOCATION, os.path.dirname(output_filename)), exist_ok=True)
         db.execute(download_videos.insert().values(
             video_id=video_id,
             filename=output_filename,

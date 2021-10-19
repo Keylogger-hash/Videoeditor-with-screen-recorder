@@ -178,7 +178,7 @@ def delete_cut(output_name, db):
             'success': False,
             'error': 'Not found'
         }
-    if result['status'] in (TaskStatus.WAITING, TaskStatus.WORKING, TaskStatus.INACTIVE):
+    if result['status'] in (TaskStatus.QUEUED, TaskStatus.WORKING, TaskStatus.INACTIVE):
         videoservice = CutVideoService(current_app.config.get('VIDEOCUT_SERVICE_ADDR'))
         try:
             resp = videoservice.stop(output_name)
@@ -186,7 +186,7 @@ def delete_cut(output_name, db):
             print('Got exception when requested service')
     db.execute(videos.delete().where(videos.c.output_filename == output_name))
     # NOTE: remove in service instead?
-    if os.path.isfile(output_name):
+    if os.path.isfile(os.path.join(CUTS_LOCATION, output_name)):
         os.remove(os.path.join(CUTS_LOCATION, output_name))
     return {'success': True}
 
@@ -226,7 +226,7 @@ def start_videocut(db):
         # NOTE: allowing retrying complete task with same output name is meaningless a bit - should be reconsidered
         if video_cut is not None and video_cut['status'] in (TaskStatus.FAILED, TaskStatus.COMPLETED, TaskStatus.INACTIVE):  # restarting completed/failed task
             db.execute(
-                videos.update().where(videos.c.output_filename == data['destination']).values(status=TaskStatus.INACTIVE, progress=0)
+                videos.update().where(videos.c.output_filename == data['destination']).values(status=TaskStatus.INACTIVE.value, progress=0)
             )
             source_name = video_cut['source']
             output_name = data['destination']
