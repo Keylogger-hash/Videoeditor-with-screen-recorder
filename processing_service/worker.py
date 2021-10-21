@@ -69,7 +69,7 @@ class ProcessingWorker(Thread):
     def run(self) -> None:
         while not self.exit_event.is_set():
             try:
-                message = self.tasks_datastream.get(False, WORKER_IPC_POLL) # type: IPCMessage
+                message = self.tasks_datastream.get(True, WORKER_IPC_POLL) # type: IPCMessage
             except QueueIsEmpty:
                 continue
             logging.debug(str(message))
