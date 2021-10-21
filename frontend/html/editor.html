@@ -1,0 +1,123 @@
+<!doctype html>
+<meta charset='utf-8' />
+<head>
+<title>Video cut demo</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.3/css/bulma.min.css">
+<style>
+body, html {
+    height: 100%;
+}
+body {
+    padding: 0;
+    margin: 0;
+}
+div {
+    box-sizing: border-box;
+}
+.main {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+}
+.editor-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    height: 100px;
+}
+.source-toolbar {
+    display: flex;
+    flex-direction: row;
+    background-color: #EEE;
+}
+.source-toolbar > div {
+    padding: 4px;
+}
+.player-area {
+    flex-grow: 1;
+    display: flex;
+}
+.player-area video {
+    flex-grow: 1;
+}
+</style>
+<script src='/static/timeline.js'></script>
+<script src='/static/editor.js'></script>
+</head>
+<body>
+    <div class='main'>
+        <div class='source-toolbar'>
+            <div class='field has-addons'>
+                <div class='control'>
+                    <div class='select is-small'>
+                        <select id='sourceSelector'></select>
+                    </div>
+                </div>
+                <div class='control'>
+                    <button class='button is-small' id='sourceRefresh'>Refresh</button>
+                </div>
+                <div class='control'>
+                    <button class='button is-small' id='sourceLoadBtn'>Load</button>
+                </div>
+            </div>
+            <div style='padding: 4px; margin-left: auto'>
+                <span id='editorCutProgress'></span>
+                <div class='field has-addons'>
+                    <div class='control'>
+                        <div class='select is-small'>
+                            <select id='editorCutStreams'>
+                                <option value='both'>Keep both streams</option>
+                                <option value='audio'>Audio Only</option>
+                                <option value='video'>Video Only</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class='control'>
+                        <button class='button is-primary is-small' id='editorCutBtn'>Cut</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class='editor-area'>
+            <div class='player-area'>
+                <video id='editorPlayer' width='800' height='600'></video>
+            </div>
+            <div style='display: flex; padding: 4px 4px 0;'>
+                <div class='field has-addons px-2'>
+                    <div class='control'>
+                        <button class='button is-small' id='controlsSeekStart'>To start</button>
+                    </div>
+                    <div class='control'>
+                        <button class='button is-small' id='controlsPlay'>Play</button>
+                    </div>
+                    <div class='control'>
+                        <button class='button is-small' id='controlsSeekEnd'>To end</button>
+                    </div>
+                </div>
+                <div class='field has-addons px-2'>
+                    <div class='control'>
+                        <button class='button is-small' id='controlsCutStart'>Selection start</button>
+                    </div>
+                    <div class='control'>
+                        <button class='button is-small' id='controlsCutReset'>Reset selection</button>
+                    </div>
+                    <div class='control'>
+                        <button class='button is-small' id='controlsCutEnd'>Selection end</button>
+                    </div>
+                </div>
+                <div class='field has-addons px-2'>
+                    <div class='control'>
+                        <button class='button is-small' id='controlsZoomIn'>Zoom In</button>
+                    </div>
+                    <div class='control'>
+                        <button class='button is-small' id='controlsZoomOut'>Zoom Out</button>
+                    </div>
+                </div>
+            </div>
+            <div>
+                <canvas id='editorTimeline' height='200'></canvas>
+            </div>
+        </div>
+    </div>
+</body>

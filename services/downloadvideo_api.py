@@ -151,7 +151,7 @@ def stop_downloading_video(video_id):
         print(resp)
     dbe.execute(download_videos.delete().where(download_videos.c.video_id == video_id))
     path = os.path.join(DOWNLOADS_LOCATION, os.path.dirname(result['filename']))
-    
+
     if os.path.isdir(path):
         shutil.rmtree(path)
 
@@ -182,7 +182,7 @@ def start_downloading():
         }
 
     dbe = create_engine(current_app.config.get('DATABASE'))
-    result = dbe.execute(select([download_videos.c.status]).where(download_videos.c.link == link)).fetchone()
+    result = dbe.execute(select([download_videos.c.status, download_videos.c.filename, download_videos.c.video_id]).where(download_videos.c.link == link)).fetchone()
     if result is not None and result == TaskStatus.COMPLETED:
         return {
             "success": False,
@@ -220,6 +220,7 @@ def start_downloading():
         )
     else:
         output_filename = result['filename']
+        video_id = result['video_id']
 
     download_service = DownloadVideoApi(current_app.config.get('DOWNLOAD_SERVICE_ADDR'))
     resp = download_service.start(link=data["link"],

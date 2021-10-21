@@ -6,6 +6,7 @@ from functools import partial
 from flask import Flask, request, current_app, send_from_directory
 from sqlalchemy import create_engine
 from services import cutvideo_api, downloadvideo_api
+from frontend import demo_ui
 from settings import DOWNLOADS_LOCATION, CUTS_LOCATION
 from download_service.common import TaskStatus
 from database.datamodel import download_videos
@@ -13,12 +14,7 @@ from database.datamodel import download_videos
 
 app = Flask(__name__)
 
-
-@app.route("/")
-def index():
-    return "Hello world"
-
-@app.route("/upload", methods=['POST', 'PUT'])
+@app.route("/api/upload", methods=['POST', 'PUT'])
 def upload_video():
     if not 'upload' in request.files:
         return {
@@ -54,7 +50,7 @@ def upload_video():
         "success": False,
         "error": "No file uploaded"
     }
-
+app.register_blueprint(demo_ui.demo_ui, url_prefix='/')
 app.register_blueprint(cutvideo_api.api, url_prefix='/api')
 app.register_blueprint(downloadvideo_api.api, url_prefix='/api')
 app.config.from_object('settings')
