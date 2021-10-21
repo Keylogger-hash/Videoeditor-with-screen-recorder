@@ -51,11 +51,11 @@ function updateProgress(outputFilename){
     .then(r => r.json())
     .then((data) => {
         if(data.success){
-            if((data.result.status == 'QUEUED') || (data.result.status == 'WORKING')){
-                document.all.editorCutProgress.innerText = data.result.progress + '%';
+            if((data.result.status == 'QUEUED') || (data.result.status == 'WORKING') || (data.result.status == 'INACTIVE')){
+                document.all.processingModalContent.innerText = data.result.progress + '%';
                 setTimeout(updateProgress.bind(null, outputFilename), 1000);
             } else {
-                document.all.editorCutProgress.innerHTML = '<a target="_blank" href="' + cutsBaseURL + outputFilename + '">Download cut video</a>';
+                document.all.processingModalContent.innerHTML = '<a class="button" target="_blank" href="' + cutsBaseURL + outputFilename + '">Download video</a>';
             }
         }
     })
@@ -74,6 +74,7 @@ function cutSelectedRange(){
     }).then(r => r.json())
     .then((response) => {
         if(response.success){
+            showModal('processingModal');
             updateProgress(response.result.output);
         } else {
             alert('Error: ' + response.error);

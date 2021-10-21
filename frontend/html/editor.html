@@ -44,8 +44,25 @@ div {
 </style>
 <script src='/static/timeline.js'></script>
 <script src='/static/editor.js'></script>
+<script>
+// helpers
+function showModal(id){
+    document.getElementById(id).classList.add('is-active');
+}
+function hideModal(id){
+    document.getElementById(id).classList.remove('is-active');
+}
+</script>
 </head>
 <body>
+    <div class="modal" id='processingModal'>
+        <div class="modal-background"></div>
+        <div class="modal-content">
+            <div class='box' id='processingModalContent'>
+            </div>
+        </div>
+        <button class="modal-close is-large" aria-label="close" onclick="hideModal('processingModal')"></button>
+    </div>
     <div class='main'>
         <div class='source-toolbar'>
             <div class='field has-addons'>
