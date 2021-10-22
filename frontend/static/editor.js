@@ -14,20 +14,6 @@ function formatSeconds(n){
     return m + (s < 10 ? ':0' : ':') + s;
 }
 
-function loadSourceList(){
-    fetch(apiURL + '/downloads/')
-    .then(r => r.json())
-    .then(({ success, downloads: sources }) => {
-        var selector = document.all.sourceSelector;
-        selector.options.length = 0;
-        sources.forEach(function(item){
-            if(item.status == 'COMPLETED'){
-                selector.add(new Option(item.title, item.id));
-            }
-        });
-    })
-}
-
 function loadSelectedSource(){
     var selector = document.all.sourceSelector;
     var videoId = selector.options[selector.selectedIndex].value;
@@ -176,7 +162,7 @@ function main(){
 
     document.querySelector('.dashboard').style.height = window.innerHeight + 'px';
     document.all.sourceLoadBtn.onclick = loadSelectedSource;
-    document.all.sourceRefresh.onclick = loadSourceList;
+    document.all.sourceRefresh.onclick = model.fetchSources.bind(model);
     //document.all.editorCutBtn.onclick = cutSelectedRange;
     document.all.editorPlayer.onloadedmetadata = updateVideoMeta;
     document.all.editorPlayer.ontimeupdate = playerUpdate;
