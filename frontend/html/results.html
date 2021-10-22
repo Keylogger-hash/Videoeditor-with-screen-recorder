@@ -1,0 +1,47 @@
+<!doctype html>
+<head>
+    <title>Processed videos</title>
+    <meta charset='utf-8' />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.3/css/bulma.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
+    <script src='/static/processed.js'></script>
+</head>
+<body>
+    <div id='app'>
+        <div class='navbar is-dark'>
+            <div class='navbar-menu'>
+                <div class='navbar-start'>
+                    <a class='navbar-item' href='/'>Sources</a>
+                    <a class='navbar-item' href='/edit'>Editor</a>
+                </div>
+            </div>
+        </div>
+        <div class='container is-fluid'>
+            <table class='table is-fullwidth'>
+                <thead>
+                    <tr>
+                        <th>Filename</th>
+                        <th>Status</th>
+                        <th>Started at</th>
+                        <th>Stopped at</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tr v-for='video in videos'>
+                    <td>{{ video.filename }}</td>
+                    <td>
+                        <div class='tag' v-bind:class='{ "is-danger": video.status == "FAILED", "is-success": video.status == "COMPLETED", "is-warning": video.status == "INACTIVE" }'>{{ video.status }}</div>
+                    </td>
+                    <td>{{ video.taskStartedAt }}</td>
+                    <td>{{ video.taskFinishedAt }}</td>
+                    <td>
+                        <div class='buttons has-addons are-small'>
+                            <a class='button' v-bind:href='"/files/cuts/" + video.filename' target='_blank'>View</a>
+                            <button class='button is-danger' v-on:click='deleteVideo(video.filename)'>Remove</button>
+                        </div>
+                    </td>
+                </tr>
+            </table>
+        </div>
+    </div>
+</body>

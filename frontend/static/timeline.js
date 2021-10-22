@@ -56,7 +56,9 @@ function Timeline(element, duration, options) {
         this.duration = x;
         this.rightBorder = x;
         this.leftBorder = 0;
-        this.render();
+        this.offset = 0;
+        this.scale = 1;
+        this.setPosition(0);
     }
     this.setLeftBorder = function(x){
         if((x < 0) || (x > this.duration) || (x > this.rightBorder)){

@@ -35,7 +35,7 @@ function loadSelectedSource(){
 }
 
 function loadSource(videoId){
-    currentVideo = videoId;
+    model.selectedSource = videoId;
     fetch(apiURL + '/downloads/' + videoId + '/info')
     .then(r => r.json())
     .then(({ success, result }) => {
@@ -114,7 +114,7 @@ function playerSeeked(timeToSeek){
         player.currentTime = timeToSeek;
     } else {
         player.onseeked = null;
-        console.log('done!');
+        model.timeline.setPosition(player.currentTime, true);
     }
 }
 
@@ -198,12 +198,15 @@ function main(){
         var player = document.all.editorPlayer;
         seek(model.timeline.rightBorder);
     };
-    document.all.controlsPlay.onclick = function(){
+    document.all.controlsPlay.onclick = function(event){
         var player = document.all.editorPlayer;
-        if(player.paused)
+        if(player.paused){
             player.play();
-        else
+            event.target.textContent = 'Pause';
+        } else {
             player.pause();
+            event.target.textContent = 'Pause';
+        }
     };
     document.all.controlsZoomIn.onclick = function(){ model.timeline.zoomIn(); }
     document.all.controlsZoomOut.onclick = function(){ model.timeline.zoomOut(); }

@@ -55,6 +55,13 @@ function main(){
                     }
                     this.sources = downloads;
                 })
+            },
+            deleteVideo: function(id){
+                fetch('/api/downloads/' + id + '/cancel', { method: 'delete' })
+                .then(r => r.json())
+                .then(() => {
+                    this.fetchSources();
+                })
             }
         }
     });
