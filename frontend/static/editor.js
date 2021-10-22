@@ -6,6 +6,8 @@ var currentVideo = null;
 var timeline = null;
 var isSeeking = false;
 
+var model = null;
+
 function formatSeconds(n){
     var m = Math.floor(n / 60);
     var s = n % 60;
@@ -52,18 +54,18 @@ function updateProgress(outputFilename){
     .then((data) => {
         if(data.success){
             if((data.result.status == 'QUEUED') || (data.result.status == 'WORKING') || (data.result.status == 'INACTIVE')){
-                document.all.processingModalContent.innerText = data.result.progress + '%';
+                model.processingProgress = data.result.progress;
                 setTimeout(updateProgress.bind(null, outputFilename), 1000);
             } else {
-                document.all.processingModalContent.innerHTML = '<a class="button" target="_blank" href="' + cutsBaseURL + outputFilename + '">Download video</a>';
+                model.downloadLink = cutsBaseURL + outputFilename;
             }
         }
     })
 }
 
 function cutSelectedRange(){
-    var startTime = timeline.leftBorder;
-    var endTime = timeline.rightBorder;
+    var startTime = model.timeline.leftBorder;
+    var endTime = model.timeline.rightBorder;
     var inputSource = currentVideo;
     var outputStreams = document.all.editorCutStreams.options[document.all.editorCutStreams.selectedIndex].value;
     var outputFilename = Math.floor(Date.now()) + '.mp4';
@@ -74,7 +76,7 @@ function cutSelectedRange(){
     }).then(r => r.json())
     .then((response) => {
         if(response.success){
-            showModal('processingModal');
+            model.processingDialogVisible = true;
             updateProgress(response.result.output);
         } else {
             alert('Error: ' + response.error);
@@ -91,17 +93,17 @@ function playSelectedRange(){
 
 function updateVideoMeta(){
     var player = document.all.editorPlayer;
-    timeline.setDuration(Math.floor(player.duration));
+    model.timeline.setDuration(Math.floor(player.duration));
 }
 
 function playerUpdate(){
     var player = document.all.editorPlayer;
     if(player.paused) return;
     if(!isSeeking){
-        timeline.setPosition(Math.floor(player.currentTime), true);
-        if(player.currentTime >= timeline.rightBorder){
+        model.timeline.setPosition(Math.floor(player.currentTime), true);
+        if(player.currentTime >= model.timeline.rightBorder){
             player.pause();
-            player.currentTime = timeline.rightBorder;
+            player.currentTime = model.timeline.rightBorder;
         }
     }
 }
@@ -123,30 +125,78 @@ function seek(n){
 }
 
 function main(){
-    document.all.editorTimeline.width = document.all.editorTimeline.parentNode.offsetWidth;
-    timeline = new Timeline(document.all.editorTimeline, 100, { followCursor: true });
+    model = new Vue({
+        el: '#app',
+        data: {
+            cutMode: 'both',
+            sources: [],
+            selectedSource: null,
+            processingDialogVisible: false,
+            processingProgress: 0,
+            downloadLink: null,
+            timeline: null
+        },
+        methods: {
+            fetchSources: function(){
+                fetch(apiURL + '/downloads/')
+                .then(r => r.json())
+                .then(({ success, downloads: sources }) => {
+                    this.sources = sources.filter((item) => { return item.status == 'COMPLETED' });
+                })
+            },
+            startCutting: function(){
+                var startTime = this.timeline.leftBorder;
+                var endTime = this.timeline.rightBorder;
+                var inputSource = this.selectedSource;
+                fetch(apiURL + '/cuts/', {
+                    method: 'post',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ source: inputSource, startAt: startTime, endAt: endTime, keepStreams: this.cutMode })
+                }).then(r => r.json())
+                .then((response) => {
+                    if(response.success){
+                        model.processingDialogVisible = true;
+                        updateProgress(response.result.output);
+                    } else {
+                        alert('Error: ' + response.error);
+                    }
+                })
+            }
+        },
+        mounted: function(){
+            var canvas = this.$refs.timelineCanvas;
+            canvas.width = canvas.parentNode.offsetWidth;
+            this.timeline = new Timeline(canvas, 100, { followCursor: false });
+            this.timeline.on('update', function(){
+                seek(this.timeline.position);
+            }.bind(this));
+            this.timeline.render();
+        }
+    });
+
+    document.querySelector('.dashboard').style.height = window.innerHeight + 'px';
     document.all.sourceLoadBtn.onclick = loadSelectedSource;
     document.all.sourceRefresh.onclick = loadSourceList;
-    document.all.editorCutBtn.onclick = cutSelectedRange;
+    //document.all.editorCutBtn.onclick = cutSelectedRange;
     document.all.editorPlayer.onloadedmetadata = updateVideoMeta;
     document.all.editorPlayer.ontimeupdate = playerUpdate;
     document.all.controlsCutStart.onclick = function(){
-        timeline.setLeftBorder(timeline.position);
+        model.timeline.setLeftBorder(model.timeline.position);
     };
     document.all.controlsCutEnd.onclick = function(){
-        timeline.setRightBorder(timeline.position);
+        model.timeline.setRightBorder(model.timeline.position);
     };
     document.all.controlsCutReset.onclick = function(){
-        timeline.setRightBorder(timeline.duration);
-        timeline.setLeftBorder(0);
+        model.timeline.setRightBorder(model.timeline.duration);
+        model.timeline.setLeftBorder(0);
     }
     document.all.controlsSeekStart.onclick = function(){
         var player = document.all.editorPlayer;
-        seek(timeline.leftBorder);
+        seek(model.timeline.leftBorder);
     };
     document.all.controlsSeekEnd.onclick = function(){
         var player = document.all.editorPlayer;
-        seek(timeline.rightBorder);
+        seek(model.timeline.rightBorder);
     };
     document.all.controlsPlay.onclick = function(){
         var player = document.all.editorPlayer;
@@ -155,21 +205,17 @@ function main(){
         else
             player.pause();
     };
-    document.all.controlsZoomIn.onclick = function(){ timeline.zoomIn(); }
-    document.all.controlsZoomOut.onclick = function(){ timeline.zoomOut(); }
-    timeline.on('update', function(){
-        console.log(timeline.position);
-        // document.all.editorPlayer.currentTime = timeline.position;
-        seek(timeline.position);
-    });
-    loadSourceList();
+    document.all.controlsZoomIn.onclick = function(){ model.timeline.zoomIn(); }
+    document.all.controlsZoomOut.onclick = function(){ model.timeline.zoomOut(); }
     if(location.search.length > 1){
         var params = new URLSearchParams(location.search);
         var videoId = params.get('video');
         if(videoId !== null){
+            model.selectedSource = videoId;
             loadSource(videoId);
         }
     }
+    model.fetchSources();
 }
 
 document.addEventListener('DOMContentLoaded', main);

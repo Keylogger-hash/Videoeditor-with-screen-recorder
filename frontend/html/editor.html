@@ -4,8 +4,8 @@
 <title>Video cut demo</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.3/css/bulma.min.css">
 <style>
-body, html {
-    height: 100%;
+html {
+    overflow-y: hidden;
 }
 body {
     padding: 0;
@@ -14,17 +14,9 @@ body {
 div {
     box-sizing: border-box;
 }
-.main {
+.dashboard {
     display: flex;
     flex-direction: column;
-    width: 100%;
-    height: 100%;
-}
-.editor-area {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    height: 100px;
 }
 .source-toolbar {
     display: flex;
@@ -35,72 +27,90 @@ div {
     padding: 4px;
 }
 .player-area {
-    flex-grow: 1;
+    flex: 1 1 0;
     display: flex;
+    flex-direction: column;
+    min-width: 0px;
 }
 .player-area video {
-    flex-grow: 1;
+    flex: 1 1 0;
+    margin: 0 auto;
+    height: 100%;
+}
+.controls-area {
+    display: flex;
+    padding: 8px 4px 0;
 }
 </style>
+<script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
+<script src='/static/components.js'></script>
 <script src='/static/timeline.js'></script>
 <script src='/static/editor.js'></script>
-<script>
-// helpers
-function showModal(id){
-    document.getElementById(id).classList.add('is-active');
-}
-function hideModal(id){
-    document.getElementById(id).classList.remove('is-active');
-}
+<!-- component templates -->
+<script type='text/template' id='base-modal-template'>
+    <div class='modal is-active' v-show='isShown'>
+        <div class='modal-background'></div>
+        <div class='modal-content'>
+            <slot></slot>
+        </div>
+        <button class='modal-close is-large' v-on:click='close()'></button>
+    </div>
 </script>
+<script type='text/template' id='cut-mode-selector'>
+    <div class='control'>
+        <div class='select is-small'>
+            <select v-bind:value='value' v-on:input='$emit("input", $event.target.value)'>
+                <option value='both'>Keep both streams</option>
+                <option value='audio'>Audio Only</option>
+                <option value='video'>Video Only</option>
+            </select>
+        </div>
+    </div>
+</script>
+<!-- component templates -->
 </head>
 <body>
-    <div class="modal" id='processingModal'>
-        <div class="modal-background"></div>
-        <div class="modal-content">
-            <div class='box' id='processingModalContent'>
-            </div>
-        </div>
-        <button class="modal-close is-large" aria-label="close" onclick="hideModal('processingModal')"></button>
-    </div>
-    <div class='main'>
-        <div class='source-toolbar'>
-            <div class='field has-addons'>
-                <div class='control'>
-                    <div class='select is-small'>
-                        <select id='sourceSelector'></select>
+    <div id='app'>
+        <div class='dashboard'>
+            <div class='navbar is-dark'>
+                <div class='navbar-menu'>
+                    <div class='navbar-start'>
+                        <a class='navbar-item' href='/upload'>Back to sources list</a>
                     </div>
                 </div>
-                <div class='control'>
-                    <button class='button is-small' id='sourceRefresh'>Refresh</button>
-                </div>
-                <div class='control'>
-                    <button class='button is-small' id='sourceLoadBtn'>Load</button>
-                </div>
             </div>
-            <div style='padding: 4px; margin-left: auto'>
-                <span id='editorCutProgress'></span>
-                <div class='field has-addons'>
-                    <div class='control'>
-                        <div class='select is-small'>
-                            <select id='editorCutStreams'>
-                                <option value='both'>Keep both streams</option>
-                                <option value='audio'>Audio Only</option>
-                                <option value='video'>Video Only</option>
-                            </select>
+            <div class='source-toolbar'>
+                <div class='toolbar-left'>
+                    <div class='field has-addons'>
+                        <div class='control'>
+                            <div class='select is-small'>
+                                <select id='sourceSelector' v-model='selectedSource'>
+                                    <option v-for='item in sources' v-bind:value='item.id'>{{ item.title }}</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class='control'>
+                            <button class='button is-small' id='sourceRefresh'>Refresh</button>
+                        </div>
+                        <div class='control'>
+                            <button class='button is-small' id='sourceLoadBtn'>Load</button>
                         </div>
                     </div>
-                    <div class='control'>
-                        <button class='button is-primary is-small' id='editorCutBtn'>Cut</button>
+                </div>
+                <div style='padding: 4px; margin-left: auto'>
+                    <span id='editorCutProgress'></span>
+                    <div class='field has-addons'>
+                        <cut-mode-selector v-model='cutMode' ref='cutSelector'></cut-mode-selector>
+                        <div class='control'>
+                            <button class='button is-primary is-small' v-on:click='startCutting'>Cut</button>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-        <div class='editor-area'>
             <div class='player-area'>
-                <video id='editorPlayer' width='800' height='600'></video>
+                <video id='editorPlayer'></video>
             </div>
-            <div style='display: flex; padding: 4px 4px 0;'>
+            <div class='controls-area'>
                 <div class='field has-addons px-2'>
                     <div class='control'>
                         <button class='button is-small' id='controlsSeekStart'>To start</button>
@@ -132,9 +142,16 @@ function hideModal(id){
                     </div>
                 </div>
             </div>
-            <div>
-                <canvas id='editorTimeline' height='200'></canvas>
+            <div class='timeline-area'>
+                <canvas id='editorTimeline' height='200' ref='timelineCanvas'></canvas>
             </div>
         </div>
+        <bulma-modal v-bind:is-shown='processingDialogVisible' v-on:close='processingDialogVisible = false'>
+            <div class='box content'>
+                <h2>Processing video</h2>
+                <progress class='progress is-primary' min='0' max='100' v-bind:value='processingProgress' v-show='downloadLink == null'>{{ processingProgress }}%</progress>
+                <a v-bind:href='downloadLink' class='button is-primary'>Download result video</a>
+            </div>
+        </bulma-modal
     </div>
 </body>

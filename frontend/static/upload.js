@@ -1,27 +1,8 @@
 var videoBaseURL = '/files/uploads/';
 var cutsBaseURL = '/files/cuts/';
 
-function uploadVideo(){
-    var fd = new FormData();
-    var file = document.all.videoUploadInput.files[0];
-    if(file === undefined){
-        console.warn('No file selected');
-        return;
-    }
-    fd.append('upload', file);
-    fetch('/api/upload', {
-        method: 'POST',
-        body: fd
-    })
-    .then(r => r.json())
-    .then(function(response){
-        if(!response.success){
-            document.all.videoUploadStatus.textContent = 'Failed to upload: ' + response.error;
-        } else {
-            document.all.videoUploadStatus.innerHTML = '<a href="/edit?video=' + response.result.videoId + '">Edit uploaded file</a>';
-        }
-    });
-}
+var sourcesList = null;
+var modals = null;
 
 function fetchVideo(videoLink, videoFormat){
     fetch('/api/downloads/', { method: 'post', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ link: videoLink, format_id: videoFormat }) })
@@ -36,31 +17,6 @@ function fetchVideo(videoLink, videoFormat){
     closeFormatsList();
 };
 
-function fetchFormats(){
-    var videoLink = document.all.videoDownloadUrl.value;
-    fetch('/api/downloads/info', { method: 'post', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ link: videoLink }) })
-    .then(r => r.json())
-    .then(function(response){
-        if(!response.success){
-            console.warn('Failed to fetch video variants');
-            return;
-        }
-        document.all.videoFormatsModal.classList.add('is-active');
-        document.all.videoFormatsList.innerHTML = '';
-        response.info.forEach(function(formatInfo){
-            var item = document.createElement('li');
-            var btn = document.createElement('a');
-            btn.onclick = fetchVideo.bind(null, videoLink, formatInfo.format_id);
-            btn.textContent = formatInfo.quality + '(' + formatInfo.ext + ')';
-            item.appendChild(btn);
-            document.all.videoFormatsList.appendChild(item);
-        });
-    });
-}
-
-function closeFormatsList(){
-    document.all.videoFormatsModal.classList.remove('is-active');
-}
 
 function trackDownloading(videoId){
     fetch('/api/downloads/' + videoId + '/info')
@@ -84,14 +40,55 @@ function trackDownloading(videoId){
     })
 }
 
-function displaySelectedFile(){
-    document.all.videoUploadName.textContent = document.all.videoUploadInput.files[0].name;
-}
-
 function main(){
-    document.all.videoUploadInput.onchange = displaySelectedFile;
-    document.all.videoUploadButton.onclick = uploadVideo;
-    document.all.videoFetchFormats.onclick = fetchFormats;
+    sourcesList = new Vue({
+        el: '#sourcesList',
+        data: { sources: [] },
+        methods: {
+            fetchSources: function(){
+                fetch('/api/downloads/')
+                .then(r => r.json())
+                .then(({ success, downloads }) => {
+                    if(!success){
+                        console.warn('Unable to fetch sources');
+                        return;
+                    }
+                    this.sources = downloads;
+                })
+            }
+        }
+    });
+    sourcesList.fetchSources();
+    modals = new Vue({
+        el: '#modals',
+        data: {
+            uploadDialog: false,
+            ytDownloadDialog: false,
+            ytDownloadFormatsDialog: false
+        },
+        methods: {
+            submitUpload: function(file){
+                if(file === undefined){
+                    console.warn('No file selected');
+                    return;
+                }
+                var fd = new FormData();
+                fd.append('upload', file);
+                fetch('/api/upload', {
+                    method: 'POST',
+                    body: fd
+                })
+                .then(r => r.json())
+                .then((response) => {
+                    this.uploadDialog = false;
+                    sourcesList.fetchSources();
+                });
+            },
+            submitDownload: function(link, format){
+                sourcesList.fetchSources();
+            }
+        }
+    });
 }
 
 document.addEventListener('DOMContentLoaded', main);
