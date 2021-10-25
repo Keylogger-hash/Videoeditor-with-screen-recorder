@@ -35,9 +35,7 @@
         <tr v-for='item in sources'>
             <td>{{ item.title }}</td>
             <td>
-                <span class='tag is-danger' v-if='item.status == "FAILED"'>FAILED</span>
-                <span class='tag is-primary' v-else-if='item.status == "COMPLETED"'>COMPLETED</span>
-                <span class='tag' v-else>{{ item.status }}</span>
+                <span class='tag' v-bind:class='{ "is-danger": item.status == "FAILED", "is-success": item.status == "COMPLETED", "is-warning": item.status == "INACTIVE" }'>{{ item.status }}</span>
             </td>
             <td>
                 <div  class='buttons are-small'>

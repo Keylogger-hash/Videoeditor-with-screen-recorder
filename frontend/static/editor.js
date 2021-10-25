@@ -191,7 +191,7 @@ function main(){
             event.target.textContent = 'Pause';
         } else {
             player.pause();
-            event.target.textContent = 'Pause';
+            event.target.textContent = 'Play';
         }
     };
     document.all.controlsZoomIn.onclick = function(){ model.timeline.zoomIn(); }
