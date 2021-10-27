@@ -1,0 +1,371 @@
+openapi: '3.0.3'
+info:
+  title: 'Videoeditor API'
+  version: '2021-10'
+paths:
+  /api/upload:
+    post:
+      description: Upload video as-is
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              properties:
+                upload:
+                  type: string
+                  format: binary
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                oneOf:
+                - type: object
+                  properties:
+                    success:
+                      type: boolean
+                    result:
+                      type: object
+                      properties:
+                        videoId:
+                          type: string
+                - type: object
+                  properties:
+                    success:
+                      type: boolean
+                    error:
+                      type: string
+  /api/cuts/:
+    get:
+      description: Get list of pending/completed videocuts
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  cuts:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        filename:
+                          type: string
+                        source:
+                          type: string
+                        taskStartedAt:
+                          type: string
+                        taskFinishedAt:
+                          type: string
+                        status:
+                          type: string
+                        progress:
+                          type: number
+    post:
+      description: Create new video by cutting range from uploaded one
+      requestBody:
+        content:
+          application/json:
+            schema:
+              oneOf:
+              - type: object
+                properties:
+                  source:
+                    type: string
+                  startAt:
+                    type: number
+                  endAt:
+                    type: number
+                  keepStreams:
+                    type: string
+                    enum:
+                      - both
+                      - audio
+                      - video
+              - type: object
+                properties:
+                  destination:
+                    type: string
+                  startAt:
+                    type: number
+                  endAt:
+                    type: number
+                  keepStreams:
+                    type: string
+                    enum:
+                      - both
+                      - audio
+                      - video
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                discriminator:
+                  propertyName: success
+                oneOf:
+                - type: object
+                  properties:
+                    success:
+                      type: boolean
+                    result:
+                      type: object
+                      properties:
+                        source:
+                          type: string
+                        output:
+                          type: string
+                - type: object
+                  properties:
+                    success:
+                      type: boolean
+                    error:
+                      type: string
+  /api/cuts/{filename}:
+    get:
+      description: Get information about videocut status
+      parameters:
+        - name: filename
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                discriminator:
+                  propertyName: success
+                oneOf:
+                - type: object
+                  properties:
+                    success:
+                      type: boolean
+                    result:
+                      type: object
+                      properties:
+                        filename:
+                          type: string
+                        source:
+                          type: string
+                        taskStartedAt:
+                          type: string
+                        taskStoppedAt:
+                          type: string
+                        status:
+                          type: string
+                        progress:
+                          type: number
+                - type: object
+                  properties:
+                    success:
+                      type: boolean
+                    error:
+                      type: string
+    delete:
+      description: Remove videocut and/or stop related processing task
+      parameters:
+        - name: filename
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                discriminator:
+                  propertyName: success
+                oneOf:
+                - type: object
+                  properties:
+                    success:
+                      type: boolean
+                - type: object
+                  properties:
+                    success:
+                      type: boolean
+                    error:
+                      type: string
+  /api/downloads:
+    get:
+      description: Get list of available source videos
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  downloads:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        title:
+                          type: string
+                        filename:
+                          type: string
+                        link:
+                          type: string
+                        quality:
+                          type: string
+                        status:
+                          type: string
+    post:
+      description: Start downloading video with specified format from YT
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                link:
+                  type: string
+                format_id:
+                  type: string
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                oneOf:
+                - type: object
+                  properties:
+                    success:
+                      type: boolean
+                - type: object
+                  properties:
+                    success:
+                      type: boolean
+                    error:
+                      type: string
+  /api/downloads/info:
+    post:
+      description: Get available formats for YT video
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                link:
+                  type: string
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                oneOf:
+                - type: object
+                  properties:
+                    success:
+                      type: boolean
+                    title:
+                      type: string
+                    thumbnails:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          url:
+                            type: string
+                          width:
+                            type: number
+                          height:
+                            type: number
+                          resolution:
+                            type: number
+                    info:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          format_id:
+                            type: string
+                          ext:
+                            type: string
+                          quality:
+                            type: string
+                          fps:
+                            type: number
+                - type: object
+                  properties:
+                    success:
+                      type: boolean
+                    error:
+                      type: string
+  /api/downloads/{video_id}/cancel:
+    delete:
+      description: Cancel and/or remove source video
+      parameters:
+      - name: video_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                oneOf:
+                - type: object
+                  properties:
+                    success:
+                      type: boolean
+                - type: object
+                  properties:
+                    success:
+                      type: boolean
+                    error:
+                      type: string
+  /api/downloads/{video_id}/info:
+    get:
+      description: Get information about source video
+      parameters:
+      - name: video_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                oneOf:
+                - type: object
+                  properties:
+                    success:
+                      type: boolean
+                    result:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        title:
+                          type: string
+                        filename:
+                          type: string
+                        link:
+                          type: string
+                        quality:
+                          type: string
+                        status:
+                          type: string
+                - type: object
+                  properties:
+                    success:
+                      type: boolean
+                    error:
+                      type: string
