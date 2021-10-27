@@ -3,4 +3,5 @@ jinja2
 jsonschema
 youtube-dl
 sqlalchemy
+psycopg2
 zmq

@@ -1,0 +1,66 @@
+version: "3.5"
+services:
+    processing_service:
+        build:
+            context: .
+            dockerfile: processing.Dockerfile
+        expose:
+        - "4000"
+        volumes:
+        - "uploads:/data/sources"
+        - "results:/data/outputs"
+        environment:
+            DATABASE: "postgresql://${DB_USER}:${DB_PASSWORD}@dbserver/${DB_NAME}"
+        networks:
+            main:
+                aliases:
+                - processing_svc
+    downloader_service:
+        build:
+            context: .
+            dockerfile: downloading.Dockerfile
+        expose:
+        - "4000"
+        volumes:
+        - "uploads:/data/sources"
+        environment:
+            DATABASE: "postgresql://${DB_USER}:${DB_PASSWORD}@dbserver/${DB_NAME}"
+        networks:
+            main:
+                aliases:
+                - downloader_svc
+    api:
+        build:
+            context: .
+            dockerfile: apiserver.Dockerfile
+        volumes:
+        - "uploads:/data/sources"
+        - "results:/data/outputs"
+        ports:
+        - "4000:80"
+        environment:
+            DATABASE: "postgresql://${DB_USER}:${DB_PASSWORD}@dbserver/${DB_NAME}"
+        networks:
+            main:
+
+    database:
+        image: postgres:10.18
+        environment:
+            POSTGRES_USER: '${DB_USER}'
+            POSTGRES_PASSWORD: '${DB_PASSWORD}'
+            POSTGRES_DB: '${DB_NAME}'
+        volumes:
+            - ./extra/initdb.sql:/docker-entrypoint-initdb.d/initdb.sql
+            - dbdata:/var/lib/postgresql/data
+        networks:
+            main:
+                aliases:
+                - dbserver
+
+volumes:
+    uploads:
+    results:
+    dbdata:
+
+networks:
+    main:

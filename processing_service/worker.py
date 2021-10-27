@@ -15,7 +15,7 @@ from shared.zmqserver import ZMQServer
 from database.datamodel import videos
 from settings import DOWNLOADS_LOCATION as UPLOADS_LOCATION
 
-WORKER_IPC_POLL = 1000
+WORKER_IPC_POLL = 30
 
 
 class WorkerTask(object):
@@ -130,8 +130,9 @@ class VideoServiceListener(ZMQServer):
         logging.info('Starting server...')
 
     def finalize(self):
-        logging.info('Shutting down worker...')
+        logging.info('Stopping worker...')
         self.worker.shutdown()
+        self.worker.join()
         logging.info('Server stopped')
 
     def handle(self, request):
