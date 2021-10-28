@@ -1,12 +1,12 @@
-FROM tiangolo/uwsgi-nginx-flask:python3.8
+FROM python:3.7-slim
 
 WORKDIR /app
 
 ENV MODE "api"
-ENV STATIC_PATH /app/frontend/static
 
 COPY requirements.txt ./
-RUN pip install -r ./requirements.txt
+RUN pip install -r ./requirements.txt && \
+    pip install gunicorn
 
 COPY frontend ./frontend
 COPY database ./database
@@ -14,4 +14,6 @@ COPY services ./services
 COPY processing_service ./processing_service
 COPY download_service ./download_service
 COPY settings.docker.py ./settings.py
-COPY routes.py ./extra/uwsgi.ini ./
+COPY routes.py ./
+
+ENTRYPOINT ["/usr/local/bin/gunicorn", "-b", "0.0.0.0:80", "-w", "4", "--access-logfile", "-", "routes:app"]
