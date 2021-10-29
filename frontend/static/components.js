@@ -10,10 +10,13 @@ Vue.component('bulma-modal', {
 });
 Vue.component('upload-modal', {
     template: '#upload-modal-template',
-    props: ['is-shown'],
+    props: ['is-shown', 'upload-url'],
     data: function(){ return {
         dialogShown: this.isShown,
-        file: null
+        file: null,
+        errorMessage: null,
+        isStarted: false,
+        progress: null
     } },
     watch: {
         isShown: function(value){
@@ -32,7 +35,44 @@ Vue.component('upload-modal', {
             this.file = event.target.files[0]
         },
         submitUpload: function(){
-            this.$emit('submit-upload', this.file);
+            if(this.file == null){
+                this.errorMessage = 'No file selected';
+                console.warn('No file selected');
+                return;
+            }
+            var fd = new FormData();
+            fd.append('upload', this.file);
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', this.uploadUrl)
+            xhr.onreadystatechange = () => {
+                if(xhr.readyState == XMLHttpRequest.DONE){
+                    this.isStarted = false;
+                    if(xhr.status == 200){
+                        this.$emit('submit-upload');
+                    } else {
+                        this.errorMessage = 'Failed to complete upload, server respond with error code ' + xhr.status;
+                    }
+                }
+            };
+            xhr.onprogress = (event) => {
+                this.progress = Math.floor(100 * event.loaded / event.total);
+            };
+            xhr.onerror = () => {
+                this.errorMessage = 'Failed to complete upload, network error';
+                this.isStarted = false;
+            };
+            xhr.send(fd);
+            this.isStarted = true;
+            /*
+            fetch('/api/upload', {
+                method: 'POST',
+                body: fd
+            })
+            .then(r => r.json())
+            .then((response) => {
+                this.$emit('submit-upload');
+            });
+            */
         }
     }
 });
@@ -63,11 +103,15 @@ Vue.component('yt-download-modal', {
             .then(r => r.json())
             .then((response) => {
                 if(!response.success){
+                    this.errorMessage = 'Failed to fetch video variants: ' + response.error;
                     console.warn('Failed to fetch video variants');
                     return;
                 }
                 this.stage = 2;
                 this.availableFormats = response.info;
+            })
+            .catch((error) => {
+                this.errorMessage = 'Failed to fetch variants: ' + error.toString();
             });
         },
         submitDownload: function(formatId){
@@ -79,13 +123,17 @@ Vue.component('yt-download-modal', {
             .then(r => r.json())
             .then((response) => {
                 if(!response.success){
-                    console.warn('Failed to start downloading')
+                    this.errorMessage = 'Failed to start downloading: ' + response.error;
+                    console.warn('Failed to start downloading');
                     return;
                 }
                 this.videoId = response.video_id;
                 this.trackDownloading();
                 this.stage = 3;
                 this.$emit('download-submit');
+            })
+            .catch((error) => {
+                this.errorMessage = 'Failed to start downloading: ' + error.toString();
             });
         },
         trackDownloading: function(){
@@ -95,7 +143,7 @@ Vue.component('yt-download-modal', {
             .then(r => r.json())
             .then((response) => {
                 if(!response.success){
-                    this.errorMessage = 'Failed to get download status'
+                    this.errorMessage = 'Failed to get download status: ' + response.error;
                     return;
                 }
                 switch(response.result.status){
@@ -106,17 +154,12 @@ Vue.component('yt-download-modal', {
                         this.stage = 4;
                         break;
                     default:
-                        setTimeout(this.trackDownloading, 2000);
+                        setTimeout(this.trackDownloading, 5000);
                 }
             })
-        }
-    }
-});
-Vue.component('cut-mode-selector', {
-    template: '#cut-mode-selector',
-    props: ['value'],
-    data: function(){
-        return {
+            .catch((error) => {
+                this.errorMessage = 'Failed to fetch status: ' + error.toString();
+            });
         }
     }
 });

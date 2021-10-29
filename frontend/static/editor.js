@@ -207,4 +207,13 @@ function main(){
     model.fetchSources();
 }
 
+Vue.component('cut-mode-selector', {
+    template: '#cut-mode-selector',
+    props: ['value'],
+    data: function(){
+        return {
+        }
+    }
+});
+
 document.addEventListener('DOMContentLoaded', main);

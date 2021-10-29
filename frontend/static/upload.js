@@ -75,21 +75,8 @@ function main(){
         },
         methods: {
             submitUpload: function(file){
-                if(file === undefined){
-                    console.warn('No file selected');
-                    return;
-                }
-                var fd = new FormData();
-                fd.append('upload', file);
-                fetch('/api/upload', {
-                    method: 'POST',
-                    body: fd
-                })
-                .then(r => r.json())
-                .then((response) => {
-                    this.uploadDialog = false;
-                    sourcesList.fetchSources();
-                });
+                this.uploadDialog = false;
+                sourcesList.fetchSources();
             },
             submitDownload: function(link, format){
                 sourcesList.fetchSources();

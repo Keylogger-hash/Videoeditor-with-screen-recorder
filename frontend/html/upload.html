@@ -61,6 +61,10 @@
     <bulma-modal v-bind:is-shown='dialogShown' v-on:close='$emit("close")'>
         <div class='box content'>
             <h2>Upload from local disk</h2>
+            <div class='notification is-warning p2' v-show='errorMessage != null'>
+                <button class='delete' v-on:click='errorMessage = null'></button>
+                {{ errorMessage }}
+            </div>
             <div class='field'>
                 <div class='file has-name'>
                     <label class='file-label'>
@@ -71,9 +75,13 @@
                         <span class='file-name'>{{ filename }}</span>
                     </label>
                 </div>
+
             </div>
-            <button class='button is-primary' type='button' v-on:click='submitUpload'>Upload</button>
-            <button class='button is-danger' type='button' v-on:click='$emit("close")'>Close</button>
+            <progress class='progress is-small' max='100' v-bind:value='progress' v-show='isStarted'></progress>
+            <div class='buttons is-right'>
+                <button class='button is-text' type='button' v-on:click='$emit("close")'>Cancel</button>
+                <button class='button is-primary' type='button' v-on:click='submitUpload'>Upload</button>
+            </div>
         </div>
     </bulma-modal>
 </script>
@@ -82,7 +90,10 @@
     <bulma-modal v-bind:is-shown='mainDialog' v-on:close='$emit("close")'>
         <div class='box content yt-download-form'>
             <h2>Download from YT</h2>
-            <div class='notification is-danger' v-show='errorMessage != null'>{{ errorMessage }}</div>
+            <div class='notification is-warning' v-show='errorMessage != null'>
+                <button class='delete' v-on:click='errorMessage = null'></button>
+                {{ errorMessage }}
+            </div>
             <div v-show='stage == 1'>
                 <div class='field'>
                     <label class='label'>Link to YT video</label>
@@ -90,15 +101,24 @@
                         <input class='input' type='text' v-model='downloadLink'>
                     </div>
                 </div>
-                <button class='button is-primary' type='button' v-on:click='fetchFormats'>Next</button>
+                <div class='buttons is-right'>
+                    <button class='button is-text' type='button' v-on:click='$emit("close")'>Cancel</button>
+                    <button class='button is-primary' type='button' v-on:click='fetchFormats'>Next</button>
+                </div>
             </div>
-            <div class='menu' v-show='stage == 2'>
-                <p class='menu-label'>Available formats</p>
-                <ul class='menu-list'>
-                    <li v-for='format in availableFormats'>
-                        <a v-on:click='submitDownload(format.format_id)'>{{ format.quality }} [{{ format.ext }}]</a>
-                    </li>
-                </ul>
+            <div v-show='stage == 2'>
+                <div class='menu'>
+                    <p class='menu-label'>Available formats</p>
+                    <ul class='menu-list'>
+                        <li v-for='format in availableFormats'>
+                            <a v-on:click='submitDownload(format.format_id)'>{{ format.quality }} [{{ format.ext }}]</a>
+                        </li>
+                    </ul>
+                </div>
+                <div class='buttons is-right'>
+                    <button class='button is-text' type='button' v-on:click='$emit("close")'>Cancel</button>
+                    <button class='button' type='button' v-on:click='stage = 1'>Back</button>
+                </div>
             </div>
             <div v-show='stage == 3'>
                 <progress class='progress is-primary' max='100'></progress>
@@ -111,81 +131,6 @@
 </script>
 
 <div id='modals'>
-    <upload-modal v-bind:is-shown='uploadDialog' v-on:submit-upload='submitUpload' v-on:close='uploadDialog = false'></upload-modal>
-    <!--
-    <bulma-modal v-bind:is-shown='ytDownloadDialog' v-on:close='ytDownloadDialog = false'>
-        <div class='box content yt-download-form'>
-            <h2>Download from YT</h2>
-            <div class='field'>
-                <label class='label'>Link to YT video</label>
-                <div class='control'>
-                    <input class='input' type='text' id='videoDownloadUrl'>
-                </div>
-            </div>
-            <button class='button is-primary' type='button' id='videoFetchFormats'>Download</button>
-        </div>
-    </bulma-modal>
-    <bulma-modal v-bind:is-shown='ytDownloadFormatsDialog' v-on:close='ytDownloadFormatsDialog = false'>
-        <div class='box'>
-            <div class='menu'>
-                <p class='menu-label'>Available formats</p>
-                <ul class='menu-list' id='videoFormatsList'></ul>
-            </div>
-        </div>
-    </bulma-modal>
-    -->
+    <upload-modal upload-url='/api/upload' v-bind:is-shown='uploadDialog' v-on:submit-upload='submitUpload' v-on:close='uploadDialog = false'></upload-modal>
     <yt-download-modal v-bind:is-shown='ytDownloadDialog' v-on:download-submit='submitDownload' v-on:close='ytDownloadDialog = false'></yt-download-modal>
-</div>
-
-<div class='modal' id='uploadLocalFile'>
-    <div class='modal-background'></div>
-    <div class='modal-content'>
-        <div class='box content upload-form'>
-            <h2>Upload from local disk</h2>
-            <div class='field'>
-                <div class='file has-name'>
-                    <label class='file-label'>
-                        <input class='file-input' type='file' name='upload' id='videoUploadInput' />
-                        <span class='file-cta'>
-                            <span class='file-label'>Choose file</span>
-                        </span>
-                        <span class='file-name' id='videoUploadName'></span>
-                    </label>
-                </div>
-            </div>
-            <button class='button is-primary' type='button' id='videoUploadButton'>Upload</button>
-        </div>
-    </div>
-    <button class='modal-close is-large' onclick='closeFormatsList()'></button>
-</div>
-
-<div class='modal' id='uploadYTVideo'>
-    <div class='modal-background'></div>
-    <div class='modal-content'>
-         <div class='box content yt-download-form'>
-            <h2>Download from YT</h2>
-            <div class='field'>
-                <label class='label'>Link to YT video</label>
-                <div class='control'>
-                    <input class='input' type='text' id='videoDownloadUrl'>
-                </div>
-            </div>
-            <button class='button is-primary' type='button' id='videoFetchFormats'>Download</button>
-        </div>
-    </div>
-    <button class='modal-close is-large' onclick='close()'></button>
-</div>
-
-
-<div class='modal' id='videoFormatsModal'>
-    <div class='modal-background'></div>
-    <div class='modal-content'>
-        <div class='box'>
-            <div class='menu'>
-                <p class='menu-label'>Available formats</p>
-                <ul class='menu-list' id='videoFormatsList'></ul>
-            </div>
-        </div>
-    </div>
-    <button class='modal-close is-large' onclick='closeFormatsList()'></button>
 </div>
