@@ -4,9 +4,19 @@
     <meta charset='utf-8' />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.3/css/bulma.min.css">
     <script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
+    <script src='/static/components.js'></script>
     <script src='/static/processed.js'></script>
 </head>
 <body>
+    <script type='text/template' id='base-modal-template'>
+        <div class='modal is-active' v-show='isShown'>
+            <div class='modal-background'></div>
+            <div class='modal-content'>
+                <slot></slot>
+            </div>
+            <button class='modal-close is-large' v-on:click='close()'></button>
+        </div>
+    </script>
     <div id='app'>
         <div class='navbar is-dark'>
             <div class='navbar-menu is-active'>
@@ -36,12 +46,21 @@
                     <td>{{ video.taskFinishedAt }}</td>
                     <td>
                         <div class='buttons has-addons are-small'>
-                            <a class='button' v-bind:href='"/files/cuts/" + video.filename' target='_blank'>View</a>
+                            <button class='button' v-on:click='previewVideo(video.filename)'>View</button>
                             <button class='button is-danger' v-on:click='deleteVideo(video.filename)'>Remove</button>
                         </div>
                     </td>
                 </tr>
             </table>
         </div>
+        <bulma-modal v-bind:is-shown='previewFile != null' v-on:close='previewFile = null'>
+            <div class='box content'>
+                <h3>Preview</h3>
+                <video v-bind:src='previewFile == null ? "" : previewFile' controls></video>
+                <div class='buttons is-centered'>
+                    <button class='button' v-on:click='previewFile = null'>Close</button>
+                </div>
+            </div>
+        </bulma-modal>
     </div>
 </body>

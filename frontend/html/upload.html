@@ -122,6 +122,7 @@
             </div>
             <div v-show='stage == 3'>
                 <progress class='progress is-primary' max='100'></progress>
+                <button class='button is-danger' v-on:click='cancelDownload()'>Cancel</button>
             </div>
             <div v-show='stage == 4'>
                 <a class='button' v-bind:href='"/edit?video=" + videoId'>Edit video</a>
@@ -131,6 +132,16 @@
 </script>
 
 <div id='modals'>
-    <upload-modal upload-url='/api/upload' v-bind:is-shown='uploadDialog' v-on:submit-upload='submitUpload' v-on:close='uploadDialog = false'></upload-modal>
-    <yt-download-modal v-bind:is-shown='ytDownloadDialog' v-on:download-submit='submitDownload' v-on:close='ytDownloadDialog = false'></yt-download-modal>
+    <upload-modal
+        upload-url='/api/upload'
+        v-bind:is-shown='uploadDialog'
+        v-on:submit-upload='submitUpload'
+        v-on:close='uploadDialog = false'
+    ></upload-modal>
+    <yt-download-modal
+        v-bind:is-shown='ytDownloadDialog'
+        v-on:download-completed='downloadCompleted'
+        v-on:download-canceled='downloadCanceled'
+        v-on:close='ytDownloadDialog = false'
+    ></yt-download-modal>
 </div>

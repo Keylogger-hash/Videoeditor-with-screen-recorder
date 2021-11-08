@@ -4,7 +4,8 @@ function main(){
     app = new Vue({
         el: '#app',
         data: {
-            videos: []
+            videos: [],
+            previewFile: null
         },
         methods: {
             fetchVideos: function(){
@@ -17,6 +18,9 @@ function main(){
                     }
                     this.videos = response.cuts;
                 })
+            },
+            previewVideo: function(videoName){
+                this.previewFile = '/files/cuts/' + videoName;
             },
             deleteVideo: function(videoId){
                 fetch('/api/cuts/' + videoId, {
