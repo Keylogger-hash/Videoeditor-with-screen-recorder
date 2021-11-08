@@ -130,11 +130,24 @@ Vue.component('yt-download-modal', {
                 this.videoId = response.video_id;
                 this.trackDownloading();
                 this.stage = 3;
-                this.$emit('download-submit');
+                this.$emit('download-completed');
             })
             .catch((error) => {
                 this.errorMessage = 'Failed to start downloading: ' + error.toString();
             });
+        },
+        cancelDownload: function(){
+            fetch('/api/downloads/' + this.videoId + '/cancel', { method: 'DELETE' })
+            .then(r => r.json())
+            .then((response) => {
+                if(!response.success){
+                    this.errorMessage = response.error;
+                } else {
+                    this.videoId = null;
+                    this.$emit('download-canceled');
+                    this.$emit('close');
+                }
+            })
         },
         trackDownloading: function(){
             var videoId = this.videoId;

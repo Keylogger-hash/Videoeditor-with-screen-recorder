@@ -119,6 +119,7 @@ function main(){
             selectedSource: null,
             processingDialogVisible: false,
             processingProgress: 0,
+            outputName: null,
             downloadLink: null,
             timeline: null
         },
@@ -141,10 +142,37 @@ function main(){
                 }).then(r => r.json())
                 .then((response) => {
                     if(response.success){
-                        model.processingDialogVisible = true;
+                        this.processingDialogVisible = true;
+                        this.outputName = response.result.output;
                         updateProgress(response.result.output);
                     } else {
                         alert('Error: ' + response.error);
+                    }
+                })
+            },
+            cancelProcessing: function(){
+                fetch(apiURL + '/cuts/' + this.outputName, { method: 'DELETE' })
+                .then(r => r.json())
+                .then((response) => {
+                    if(!response.success){
+                        console.warn(response.error);
+                        return;
+                    }
+                    this.processingDialogVisible = false;
+                });
+            },
+            trackProcessingStatus: function(){
+                if(this.outputName == null) return;
+                fetch(apiURL + '/cuts/' + this.outputName)
+                .then(r => r.json())
+                .then((data) => {
+                    if(data.success){
+                        if((data.result.status == 'QUEUED') || (data.result.status == 'WORKING') || (data.result.status == 'INACTIVE')){
+                            this.processingProgress = data.result.progress;
+                            setTimeout(this.trackProcessingStatus.bind(this), 2000);
+                        } else {
+                            this.downloadLink = cutsBaseURL + this.outputName;
+                        }
                     }
                 })
             }

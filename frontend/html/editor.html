@@ -2,6 +2,7 @@
 <meta charset='utf-8' />
 <head>
 <title>Editor</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/all.min.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.3/css/bulma.min.css">
 <style>
 html {
@@ -115,36 +116,52 @@ div {
                 <div class='controls-group'>
                     <div class='field has-addons px-2'>
                         <div class='control'>
-                            <button class='button is-small is-dark' id='controlsSeekStart'>To start</button>
+                            <button class='button is-small is-dark' id='controlsSeekStart' title='To selection start'>
+                                <i class="fas fa-step-backward"></i>
+                            </button>
                         </div>
                         <div class='control'>
-                            <button class='button is-small is-dark' id='controlsPlay'>Play</button>
+                            <button class='button is-small is-dark' id='controlsPlay' title='Play/pause'>
+                                <i class='fas fa-play'></i>
+                            </button>
                         </div>
                         <div class='control'>
-                            <button class='button is-small is-dark' id='controlsSeekEnd'>To end</button>
-                        </div>
-                    </div>
-                </div>
-                <div class='controls-group'>
-                    <div class='field has-addons px-2'>
-                        <div class='control'>
-                            <button class='button is-small is-dark' id='controlsCutStart'>Selection start</button>
-                        </div>
-                        <div class='control'>
-                            <button class='button is-small is-dark' id='controlsCutReset'>Reset selection</button>
-                        </div>
-                        <div class='control'>
-                            <button class='button is-small is-dark' id='controlsCutEnd'>Selection end</button>
+                            <button class='button is-small is-dark' id='controlsSeekEnd' title='To selection end'>
+                                <i class='fas fa-step-forward'></i>
+                            </button>
                         </div>
                     </div>
                 </div>
                 <div class='controls-group'>
                     <div class='field has-addons px-2'>
                         <div class='control'>
-                            <button class='button is-small is-dark' id='controlsZoomIn'>Zoom In</button>
+                            <button class='button is-small is-dark' id='controlsCutStart' title='Selection start'>
+                                <i class='fas fa-quote-left'></i>
+                            </button>
                         </div>
                         <div class='control'>
-                            <button class='button is-small is-dark' id='controlsZoomOut'>Zoom Out</button>
+                            <button class='button is-small is-dark' id='controlsCutReset' title='Reset selection'>
+                                <i class='fas fa-window-close'></i>
+                            </button>
+                        </div>
+                        <div class='control'>
+                            <button class='button is-small is-dark' id='controlsCutEnd' title='Selection end'>
+                                <i class='fas fa-quote-right'></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class='controls-group'>
+                    <div class='field has-addons px-2'>
+                        <div class='control'>
+                            <button class='button is-small is-dark' id='controlsZoomIn' title='Zoom In'>
+                                <i class='fas fa-search-plus'></i>
+                            </button>
+                        </div>
+                        <div class='control'>
+                            <button class='button is-small is-dark' id='controlsZoomOut' title='Zoom Out'>
+                                <i class='fas fa-search-minus'></i>
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -156,8 +173,13 @@ div {
         <bulma-modal v-bind:is-shown='processingDialogVisible' v-on:close='processingDialogVisible = false'>
             <div class='box content'>
                 <h2>Processing video</h2>
-                <progress class='progress is-primary' min='0' max='100' v-bind:value='processingProgress' v-show='downloadLink == null'>{{ processingProgress }}%</progress>
-                <a v-bind:href='downloadLink' v-show='downloadLink != null' class='button is-primary'>Download result video</a>
+                <div v-show='downloadLink == null'>
+                    <progress class='progress is-primary' min='0' max='100' v-bind:value='processingProgress'>{{ processingProgress }}%</progress>
+                    <button class='button is-danger' v-on:click='cancelProcessing'>Cancel</button>
+                </div>
+                <div>
+                    <a v-bind:href='downloadLink' v-show='downloadLink != null' class='button is-primary'>Download result video</a>
+                </div>
             </div>
         </bulma-modal
     </div>

@@ -78,7 +78,10 @@ function main(){
                 this.uploadDialog = false;
                 sourcesList.fetchSources();
             },
-            submitDownload: function(link, format){
+            downloadCompleted: function(){
+                sourcesList.fetchSources();
+            },
+            downloadCanceled: function(){
                 sourcesList.fetchSources();
             }
         }
