@@ -214,12 +214,13 @@ function main(){
     };
     document.all.controlsPlay.onclick = function(event){
         var player = document.all.editorPlayer;
+        // TODO: fix icons
         if(player.paused){
             player.play();
-            event.target.textContent = 'Pause';
+            document.all.controlsPlay.innerHTML = '<i class="fas fa-pause"></i>';
         } else {
             player.pause();
-            event.target.textContent = 'Play';
+            document.all.controlsPlay.innerHTML = '<i class="fas fa-play"></i>';
         }
     };
     document.all.controlsZoomIn.onclick = function(){ model.timeline.zoomIn(); }
