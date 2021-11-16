@@ -42,6 +42,9 @@ div {
     justify-content: center;
     padding: 8px;
 }
+.controls-group {
+    align-self: center;
+}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
 <script src='/static/components.js'></script>
@@ -150,6 +153,9 @@ div {
                             </button>
                         </div>
                     </div>
+                </div>
+                <div class='controls-group'>
+                        Start: {{ selectionStart }} / End: {{ selectionEnd }}
                 </div>
                 <div class='controls-group'>
                     <div class='field has-addons px-2'>

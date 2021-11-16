@@ -11,7 +11,7 @@ var model = null;
 function formatSeconds(n){
     var m = Math.floor(n / 60);
     var s = n % 60;
-    return m + (s < 10 ? ':0' : ':') + s;
+    return m + (s < 10 ? ':0' : ':') + s.toFixed(1);
 }
 
 function loadSelectedSource(){
@@ -79,17 +79,18 @@ function playSelectedRange(){
 
 function updateVideoMeta(){
     var player = document.all.editorPlayer;
-    model.timeline.setDuration(Math.floor(player.duration));
+    model.timeline.setDuration(Math.floor(player.duration * 10) / 10);
 }
 
 function playerUpdate(){
     var player = document.all.editorPlayer;
     if(player.paused) return;
     if(!isSeeking){
-        model.timeline.setPosition(Math.floor(player.currentTime), true);
+        model.timeline.setPosition(Math.floor(player.currentTime * 10) / 10, true);
         if(player.currentTime >= model.timeline.rightBorder){
             player.pause();
-            player.currentTime = model.timeline.rightBorder;
+            model.timeline.setPosition(model.timeline.rightBorder, true);
+            model.timeline.render();
         }
     }
 }
@@ -121,7 +122,9 @@ function main(){
             processingProgress: 0,
             outputName: null,
             downloadLink: null,
-            timeline: null
+            timeline: null,
+            selectionStart: 0,
+            selectionEnd: 0
         },
         methods: {
             fetchSources: function(){
@@ -184,6 +187,10 @@ function main(){
             this.timeline.on('update', function(){
                 seek(this.timeline.position);
             }.bind(this));
+            this.timeline.on('rangeupdate', () => {
+                this.selectionStart = formatSeconds(this.timeline.leftBorder);
+                this.selectionEnd = formatSeconds(this.timeline.rightBorder);
+            });
             this.timeline.render();
         }
     });
@@ -194,6 +201,12 @@ function main(){
     //document.all.editorCutBtn.onclick = cutSelectedRange;
     document.all.editorPlayer.onloadedmetadata = updateVideoMeta;
     document.all.editorPlayer.ontimeupdate = playerUpdate;
+    document.all.editorPlayer.onpause = function(){
+        document.all.controlsPlay.innerHTML = '<i class="fas fa-play"></i>';
+    };
+    document.all.editorPlayer.onplay = function(){
+        document.all.controlsPlay.innerHTML = '<i class="fas fa-pause"></i>';
+    };
     document.all.controlsCutStart.onclick = function(){
         model.timeline.setLeftBorder(model.timeline.position);
     };
@@ -217,12 +230,11 @@ function main(){
         // TODO: fix icons
         if(player.paused){
             player.play();
-            document.all.controlsPlay.innerHTML = '<i class="fas fa-pause"></i>';
         } else {
             player.pause();
-            document.all.controlsPlay.innerHTML = '<i class="fas fa-play"></i>';
         }
     };
+
     document.all.controlsZoomIn.onclick = function(){ model.timeline.zoomIn(); }
     document.all.controlsZoomOut.onclick = function(){ model.timeline.zoomOut(); }
     if(location.search.length > 1){

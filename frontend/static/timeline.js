@@ -16,7 +16,7 @@ function Timeline(element, duration, options) {
     this.formatSeconds = function(n){
         var m = Math.floor(n / 60);
         var s = n % 60;
-        return m + (s < 10 ? ':0' : ':') + s;
+        return m + (s < 10 ? ':0' : ':') + s.toFixed(1);
     };
     this.zoomIn = function(){
         this.scale /= 2;
@@ -65,6 +65,7 @@ function Timeline(element, duration, options) {
             return false;
         }
         this.leftBorder = x;
+        this.fire('rangeupdate');
         this.render();
     };
     this.setRightBorder = function(x){
@@ -72,6 +73,7 @@ function Timeline(element, duration, options) {
             return false;
         }
         this.rightBorder = x;
+        this.fire('rangeupdate');
         this.render();
     };
     this.on = function(event, callback){
@@ -142,7 +144,7 @@ function Timeline(element, duration, options) {
         var x = e.pageX - e.target.offsetLeft;
         var y = e.pageY - e.target.offsetTop;
         if(y > self.globalTimelineHeight){
-            var position = self.offset + Math.round((x / w) * self.duration * self.scale);
+            var position = self.offset + Math.round((x / w) * self.duration * self.scale * 10) / 10;
             if((position < self.leftBorder) || (position > self.rightBorder)) return;
             self.setPosition(position);
         } else {
@@ -171,7 +173,7 @@ function Timeline(element, duration, options) {
         var x = e.pageX - e.target.offsetLeft;
         var y = e.pageY - e.target.offsetTop;
         if(y > self.globalTimelineHeight){
-            self.shadowPosition = self.offset + Math.round((x / w) * self.duration * self.scale);
+            self.shadowPosition = self.offset + Math.round((x / w) * self.duration * self.scale * 10) / 10;
         } else {
             self.shadowPosition = null;
         }
