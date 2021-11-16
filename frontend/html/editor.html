@@ -62,7 +62,7 @@ div {
 </script>
 <script type='text/template' id='cut-mode-selector'>
     <div class='control'>
-        <div class='select is-small'>
+        <div class='select'>
             <select v-bind:value='value' v-on:input='$emit("input", $event.target.value)'>
                 <option value='both'>Keep both streams</option>
                 <option value='audio'>Audio Only</option>
@@ -99,15 +99,6 @@ div {
                         </div>
                         <div class='control'>
                             <button class='button is-small' id='sourceLoadBtn'>Load</button>
-                        </div>
-                    </div>
-                </div>
-                <div style='padding: 4px; margin-left: auto'>
-                    <span id='editorCutProgress'></span>
-                    <div class='field has-addons'>
-                        <cut-mode-selector v-model='cutMode' ref='cutSelector'></cut-mode-selector>
-                        <div class='control'>
-                            <button class='button is-primary is-small' v-on:click='startCutting'>Cut</button>
                         </div>
                     </div>
                 </div>
@@ -155,9 +146,6 @@ div {
                     </div>
                 </div>
                 <div class='controls-group'>
-                        Start: {{ selectionStart }} / End: {{ selectionEnd }}
-                </div>
-                <div class='controls-group'>
                     <div class='field has-addons px-2'>
                         <div class='control'>
                             <button class='button is-small is-dark' id='controlsZoomIn' title='Zoom In'>
@@ -167,6 +155,19 @@ div {
                         <div class='control'>
                             <button class='button is-small is-dark' id='controlsZoomOut' title='Zoom Out'>
                                 <i class='fas fa-search-minus'></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class='controls-group px-2'>
+                        Start: {{ selectionStart }} / End: {{ selectionEnd }}
+                </div>
+                <div class='controls-group'>
+                    <div class='field has-addons'>
+                        <cut-mode-selector v-model='cutMode' ref='cutSelector'></cut-mode-selector>
+                        <div class='control'>
+                            <button class='button is-primary' v-on:click='startCutting'>
+                                <i class='fas fa-crop-alt'></i>
                             </button>
                         </div>
                     </div>
@@ -184,7 +185,7 @@ div {
                     <button class='button is-danger' v-on:click='cancelProcessing'>Cancel</button>
                 </div>
                 <div>
-                    <a v-bind:href='downloadLink' v-show='downloadLink != null' class='button is-primary'>Download result video</a>
+                    <a v-bind:href='downloadLink' v-show='downloadLink != null' v-bind:download='outputName' class='button is-primary'>Download result video</a>
                 </div>
             </div>
         </bulma-modal
