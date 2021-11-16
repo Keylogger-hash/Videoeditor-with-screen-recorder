@@ -14,6 +14,7 @@ from download_service.common import TaskStatus
 
 
 api = Blueprint('downloadvideo_api', __name__)
+quality_video = ["mp4", "webm", "mov"]
 
 
 class DownloadVideoApi(object):
@@ -117,10 +118,31 @@ def get_info_about_youtube_video():
     with youtube_dl.YoutubeDL() as ydl:
         info_dict = ydl.extract_info(link, download=False)
         formats = info_dict['formats']
+        best_format = ""
+        best_quality = ""
+        best_format_id = ""
+        info = []
+        for item in formats:
+            info.append({
+                "format_id": item["format_id"],
+                "ext": item["ext"],
+                "quality": item["format"].split('- ')[1],
+                "fps": item["fps"]
+            })
+        best_video = [item for item in info_dict['formats'] if item['asr'] is not None and item['quality'] != 0]
+        best_video = best_video[0]
+        print(best_video)
+        best_quality = best_video['format'].split('- ')[1]
+        best_ext = best_video['ext']
+        best_format_id = best_video['format_id']
+
     return {
         "success": True,
         "error": None,
         "title": info_dict["title"],
+        "best_format": best_quality,
+        "best_ext": best_ext,
+        "best_format_id": best_format_id,
         "thumbnails": [{
             "height": thumbnail["height"],
             "url": thumbnail["url"],
@@ -128,12 +150,7 @@ def get_info_about_youtube_video():
             "resolution": thumbnail["resolution"]
         } for thumbnail in info_dict["thumbnails"]
         ],
-        "info": [{
-            "format_id": item["format_id"],
-            "ext": item["ext"],
-            "quality": item["format"].split('- ')[1],
-            "fps": item["fps"]
-        } for item in formats]
+        "info": info
     }
 
 
