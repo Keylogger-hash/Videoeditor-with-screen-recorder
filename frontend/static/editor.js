@@ -183,6 +183,10 @@ function main(){
         mounted: function(){
             var canvas = this.$refs.timelineCanvas;
             canvas.width = canvas.parentNode.offsetWidth;
+            window.addEventListener('resize', () => {
+                canvas.width = canvas.parentNode.offsetWidth;
+                this.timeline.render();
+            });
             this.timeline = new Timeline(canvas, 100, { followCursor: false });
             this.timeline.on('update', function(){
                 seek(this.timeline.position);

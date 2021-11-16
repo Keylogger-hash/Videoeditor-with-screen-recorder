@@ -104,6 +104,20 @@ function Timeline(element, duration, options) {
         ctx.fillStyle = '#F004';
         ctx.fillRect(0, this.globalTimelineHeight, Math.floor(w * ((this.leftBorder - this.offset) / (this.duration * this.scale))), h);
         ctx.fillRect(Math.floor(w * ((this.rightBorder - this.offset) / (this.duration * this.scale))), this.globalTimelineHeight, w, h);
+        /** grid
+        var scaleStart = Math.ceil(this.offset * 10) / 10;
+        var scaleEnd = scaleStart + Math.ceil(this.duration * this.scale);
+        var scaleStep = ((w / (this.duration * this.scale)) > 40) ? 1 : 10;
+        for(var i = scaleStart * 10; i < scaleEnd * 10; i += scaleStep){
+            ctx.fillStyle = (i % 10 == 0) ? '#555' : '#333';
+            ctx.fillRect(
+                Math.floor(w * (0.1 * i - this.offset) / (this.duration * this.scale)),
+                this.globalTimelineHeight,
+                1,
+                h
+            );
+        }
+        **/
         // global cut area
         ctx.fillRect(0, 0, Math.floor(w * this.leftBorder / this.duration), this.globalTimelineHeight - 4);
         ctx.fillRect(Math.floor(w * this.rightBorder / this.duration), 0, w, this.globalTimelineHeight - 4);
@@ -155,7 +169,7 @@ function Timeline(element, duration, options) {
             } else if((w - windowPosition) < windowSize){
                 windowPosition = w - windowSize;
             }
-            self.offset = Math.floor(self.duration * windowPosition / w);
+            self.offset = Math.floor(10 * self.duration * windowPosition / w) / 10;
         }
         self.render();
     });
