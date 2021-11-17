@@ -105,24 +105,24 @@ div {
                 </div>
             </div>
             <div class='player-area'>
-                <video id='editorPlayer'></video>
+                <video id='editorPlayer' ref='player'></video>
             </div>
             <div class='controls-area has-background-light'>
                 <div class='controls-group'>
                     <div class='field has-addons px-2'>
                         <div class='control'>
-                            <button class='button is-small is-dark' id='controlsSeekStart' title='To selection start'>
+                            <button class='button is-small is-dark' title='To selection start' v-on:click='jumpToStart'>
                                 <i class="fas fa-step-backward"></i>
                             </button>
                         </div>
                         <div class='control'>
-                            <button class='button is-small is-dark' id='controlsPlay' title='Play/pause'>
+                            <button class='button is-small is-dark' title='Play/pause' v-on:click='togglePlay'>
                                 <i class='fas fa-pause' v-if='isPlaying'></i>
                                 <i class='fas fa-play' v-else></i>
                             </button>
                         </div>
                         <div class='control'>
-                            <button class='button is-small is-dark' id='controlsSeekEnd' title='To selection end'>
+                            <button class='button is-small is-dark' title='To selection end' v-on:click='jumpToEnd'>
                                 <i class='fas fa-step-forward'></i>
                             </button>
                         </div>
@@ -141,17 +141,17 @@ div {
                 <div class='controls-group'>
                     <div class='field has-addons px-2'>
                         <div class='control'>
-                            <button class='button is-small is-dark' id='controlsCutStart' title='Selection start'>
+                            <button class='button is-small is-dark' title='Selection start' v-on:click='setSelectionStart'>
                                 <i class='fas fa-quote-left'></i>
                             </button>
                         </div>
                         <div class='control'>
-                            <button class='button is-small is-dark' id='controlsCutReset' title='Reset selection'>
+                            <button class='button is-small is-dark' title='Reset selection' v-on:click='resetSelection'>
                                 <i class='fas fa-window-close'></i>
                             </button>
                         </div>
                         <div class='control'>
-                            <button class='button is-small is-dark' id='controlsCutEnd' title='Selection end'>
+                            <button class='button is-small is-dark' title='Selection end' v-on:click='setSelectionEnd'>
                                 <i class='fas fa-quote-right'></i>
                             </button>
                         </div>
@@ -160,12 +160,12 @@ div {
                 <div class='controls-group'>
                     <div class='field has-addons px-2'>
                         <div class='control'>
-                            <button class='button is-small is-dark' id='controlsZoomIn' title='Zoom In'>
+                            <button class='button is-small is-dark' title='Zoom In' v-on:click='timelineZoomIn'>
                                 <i class='fas fa-search-plus'></i>
                             </button>
                         </div>
                         <div class='control'>
-                            <button class='button is-small is-dark' id='controlsZoomOut' title='Zoom Out'>
+                            <button class='button is-small is-dark' title='Zoom Out' v-on:click='timelineZoomOut'>
                                 <i class='fas fa-search-minus'></i>
                             </button>
                         </div>
