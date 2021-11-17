@@ -124,7 +124,9 @@ function main(){
             downloadLink: null,
             timeline: null,
             selectionStart: 0,
-            selectionEnd: 0
+            selectionEnd: 0,
+            isPlaying: false,
+            isMuted: false
         },
         methods: {
             fetchSources: function(){
@@ -178,6 +180,9 @@ function main(){
                         }
                     }
                 })
+            },
+            toggleMute: function(){
+                document.all.editorPlayer.muted = !document.all.editorPlayer.muted;
             }
         },
         mounted: function(){
@@ -204,12 +209,17 @@ function main(){
     document.all.sourceRefresh.onclick = model.fetchSources.bind(model);
     //document.all.editorCutBtn.onclick = cutSelectedRange;
     document.all.editorPlayer.onloadedmetadata = updateVideoMeta;
-    document.all.editorPlayer.ontimeupdate = playerUpdate;
+    //document.all.editorPlayer.ontimeupdate = playerUpdate;
     document.all.editorPlayer.onpause = function(){
-        document.all.controlsPlay.innerHTML = '<i class="fas fa-play"></i>';
+        model.isPlaying = false;
+        clearInterval(window.positionUpdateInterval);
     };
     document.all.editorPlayer.onplay = function(){
-        document.all.controlsPlay.innerHTML = '<i class="fas fa-pause"></i>';
+        model.isPlaying = true;
+        window.positionUpdateInterval = setInterval(playerUpdate, 100);
+    };
+    document.all.editorPlayer.onvolumechange = function(event){
+        model.isMuted = event.target.muted;
     };
     document.all.controlsCutStart.onclick = function(){
         model.timeline.setLeftBorder(model.timeline.position);

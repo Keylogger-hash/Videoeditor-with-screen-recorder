@@ -31,6 +31,7 @@ div {
     display: flex;
     flex-direction: column;
     /* min-width: 0px; */
+    background-color: #000;
 }
 .player-area video {
     flex: 1 1 0;
@@ -116,12 +117,23 @@ div {
                         </div>
                         <div class='control'>
                             <button class='button is-small is-dark' id='controlsPlay' title='Play/pause'>
-                                <i class='fas fa-play'></i>
+                                <i class='fas fa-pause' v-if='isPlaying'></i>
+                                <i class='fas fa-play' v-else></i>
                             </button>
                         </div>
                         <div class='control'>
                             <button class='button is-small is-dark' id='controlsSeekEnd' title='To selection end'>
                                 <i class='fas fa-step-forward'></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class='controls-group'>
+                    <div class='field has-addons px-2'>
+                        <div class='control'>
+                            <button class='button is-small is-dark' v-bind:class='{"is-danger": isMuted}' title='Mute/Unmute' v-on:click='toggleMute'>
+                                <i class='fas fa-volume-mute' v-if='isMuted'></i>
+                                <i class='fas fa-volume-up' v-else></i>
                             </button>
                         </div>
                     </div>
@@ -160,7 +172,20 @@ div {
                     </div>
                 </div>
                 <div class='controls-group px-2'>
-                        Start: {{ selectionStart }} / End: {{ selectionEnd }}
+                    <div class='field is-grouped'>
+                        <div class='control' style='align-self: center'>
+                            Start:
+                        </div>
+                        <div class='control'>
+                            <input type='text' class='input is-static' v-bind:value="selectionStart" size='6' readonly>
+                        </div>
+                        <div class='control' style='align-self: center'>
+                            End:
+                        </div>
+                        <div class='control'>
+                            <input type='text' class='input is-static' v-bind:value="selectionEnd" size='6' readonly>
+                        </div>
+                    </div>
                 </div>
                 <div class='controls-group'>
                     <div class='field has-addons'>
@@ -184,10 +209,13 @@ div {
                     <progress class='progress is-primary' min='0' max='100' v-bind:value='processingProgress'>{{ processingProgress }}%</progress>
                     <button class='button is-danger' v-on:click='cancelProcessing'>Cancel</button>
                 </div>
-                <div>
-                    <a v-bind:href='downloadLink' v-show='downloadLink != null' v-bind:download='outputName' class='button is-primary'>Download result video</a>
+                <div v-show='downloadLink != null'>
+                    <div class='buttons'>
+                        <a v-bind:href='downloadLink' v-bind:download='outputName' class='button is-primary'>Download result video</a>
+                        <button class='button is-danger' v-on:click='processingDialogVisible = false'>Close</button>
+                    </div>
                 </div>
             </div>
-        </bulma-modal
+        </bulma-modal>
     </div>
 </body>

@@ -126,8 +126,13 @@ function Timeline(element, duration, options) {
         var cursorX = Math.floor(w * ((this.position - this.offset) / (this.duration * this.scale)))
         ctx.fillRect(cursorX, this.globalTimelineHeight, 1, h - this.globalTimelineHeight);
         ctx.fillStyle = '#FFF';
-        ctx.textAlign = 'left';
-        ctx.fillText(self.formatSeconds(this.position), cursorX + 5, Math.floor(h / 2));
+        if(w - cursorX < 100){
+            ctx.textAlign = 'right';
+            ctx.fillText(self.formatSeconds(this.position), cursorX - 5, Math.floor(h / 2));
+        } else {
+            ctx.textAlign = 'left';
+            ctx.fillText(self.formatSeconds(this.position), cursorX + 5, Math.floor(h / 2));
+        }
         // local timecodes
         ctx.textAlign = 'left';
         ctx.fillText(self.formatSeconds(self.offset), 5, h - 5);
@@ -147,8 +152,13 @@ function Timeline(element, duration, options) {
             ctx.fillStyle = ((this.shadowPosition >= this.leftBorder) && (this.shadowPosition <= this.rightBorder)) ? '#080' : '#800';
             ctx.fillRect(cursorX, this.globalTimelineHeight, 1, h - this.globalTimelineHeight);
             ctx.fillStyle = '#888';
-            ctx.textAlign = 'left';
-            ctx.fillText(self.formatSeconds(this.shadowPosition), cursorX + 5, Math.floor(3 * h / 4));
+            if(w - cursorX < 100){
+                ctx.textAlign = 'right';
+                ctx.fillText(self.formatSeconds(this.shadowPosition), cursorX - 5, Math.floor(3 * h / 4));
+            } else {
+                ctx.textAlign = 'left';
+                ctx.fillText(self.formatSeconds(this.shadowPosition), cursorX + 5, Math.floor(3 * h / 4));
+            }
         }
     };
 
