@@ -9,7 +9,7 @@ class Error(BaseException):
 
 
 class YoutubeDl:
-    def __init__(self, executable='/usr/local/bin/youtube-dl'):
+    def __init__(self, executable='/usr/local/bin/yt-dlp'):
         super().__init__()
         self.executable = executable
         self.global_opts = []
