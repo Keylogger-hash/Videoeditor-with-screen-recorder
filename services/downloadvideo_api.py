@@ -86,16 +86,24 @@ def get_downloading_info(video_id):
             "error": "Record doesn't exist"
         }
     else:
+        path = os.path.join(DOWNLOADS_LOCATION, result['filename'].split('/')[0])
+        if not os.path.exists(path):
+            progress = 0.0
+        else:
+            video_filename = os.listdir(path)
+            full_path = os.path.join(path, video_filename[0])
+            progress = round(os.stat(full_path).st_size / result['filesize'] * 100, 2)
         return {
             "success": True,
             "result": {
-                "id": result['video_id'],
-                "title": result['title'],
-                "filename": result['filename'],
-                "link": result["link"],
+                "id": result["video_id"],
                 "title": result["title"],
+                "filename": result["filename"],
+                "link": result["link"],
                 "quality": result["quality"],
-                "status": TaskStatus(result['status']).name
+                "filesize": result["filesize"],
+                "status": TaskStatus(result['status']).name,
+                "progress": progress
             }
         }
 
@@ -118,9 +126,6 @@ def get_info_about_youtube_video():
     with youtube_dl.YoutubeDL() as ydl:
         info_dict = ydl.extract_info(link, download=False)
         formats = info_dict['formats']
-        best_format = ""
-        best_quality = ""
-        best_format_id = ""
         info = []
         for item in formats:
             info.append({
@@ -213,21 +218,22 @@ def start_downloading():
         }
 
     format_ext = 'mp4'
-
+    filesize = 0
     if result is None:
         video_info = youtube_dl.YoutubeDL().extract_info(data['link'], download=False)
         title = video_info['title']
         for variant in video_info['formats']:
             if variant['format_id'] == format_id:
                 format_ext = variant['ext']
+                filesize = int(variant['filesize'])
                 break
         quality = "{} - {}".format(format_ext, format_id)
         video_id = uuid.uuid4()
         output_filename = os.path.join(b32encode(video_id.bytes).strip(b'=').lower().decode('ascii'), 'video.' + format_ext)
-
         dbe.execute(
             download_videos.insert().values(
                 video_id=video_id,
+                filesize=filesize,
                 link=link,
                 quality=quality,
                 title=title,

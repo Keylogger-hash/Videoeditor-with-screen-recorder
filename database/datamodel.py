@@ -1,4 +1,4 @@
-from sqlalchemy import MetaData, Table, Text,Column, String, Integer, DateTime
+from sqlalchemy import MetaData, Table, Text,Column, String, BigInteger,Integer, DateTime
 from sqlalchemy.dialects.postgresql import UUID
 from processing_service.common import TaskStatus
 metadata = MetaData()
@@ -16,6 +16,7 @@ videos = Table('videos', metadata,
 download_videos = Table('download_videos', metadata,
     Column('video_id', UUID(as_uuid=True), nullable=False, primary_key=True),
     Column('filename', String, nullable=False),
+    Column('filesize', BigInteger, nullable=True),
     Column('link', String, nullable=False),
     Column('title', String, nullable=True),
     Column('quality', String, nullable=True, default='default'),
