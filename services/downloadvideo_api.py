@@ -37,11 +37,12 @@ class DownloadVideoApi(object):
         socket.close()
         return json.loads(message.decode('UTF-8'))
 
-    def start(self, link: str, format_id: int, destination: str):
+    def start(self, link: str, format_id: int, format_ext: str,destination: str):
         return self._send({
             "method": "download",
             "destination": destination,
             "format_id": format_id,
+            "format_ext": format_ext,
             "link": link
         })
 
@@ -228,6 +229,7 @@ def start_downloading():
                 format_ext = variant['ext']
                 r = requests.head(variant['url'])
                 filesize = int(r.headers['Content-Length'])
+                print(filesize)
                 break
         quality = "{} - {}".format(format_ext, format_id)
         video_id = uuid.uuid4()
@@ -250,6 +252,7 @@ def start_downloading():
     download_service = DownloadVideoApi(current_app.config.get('DOWNLOAD_SERVICE_ADDR'))
     resp = download_service.start(link=data["link"],
                                   format_id=format_id,
+                                  format_ext=format_ext,
                                   destination=output_filename)
     print(resp)
     if resp["ok"]:
