@@ -9,6 +9,7 @@ from database.datamodel import videos, download_videos
 import uuid
 import youtube_dl
 from base64 import b32encode
+import requests
 from settings import DOWNLOADS_LOCATION
 from download_service.common import TaskStatus
 
@@ -225,7 +226,8 @@ def start_downloading():
         for variant in video_info['formats']:
             if variant['format_id'] == format_id:
                 format_ext = variant['ext']
-                filesize = int(variant['filesize'])
+                r = requests.head(variant['url'])
+                filesize = int(r.headers['Content-Length'])
                 break
         quality = "{} - {}".format(format_ext, format_id)
         video_id = uuid.uuid4()
