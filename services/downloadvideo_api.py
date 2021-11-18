@@ -134,7 +134,7 @@ def get_info_about_youtube_video():
                 "quality": item["format"].split('- ')[1],
                 "fps": item["fps"]
             })
-        best_video = [item for item in info_dict['formats'] if item['asr'] is not None and item['quality'] != 0]
+        best_video = [item for item in info_dict['formats'] if item['asr'] is not None and item.get('quality', 0) != 0]
         best_video = best_video[0]
         print(best_video)
         best_quality = best_video['format'].split('- ')[1]
