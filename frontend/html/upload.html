@@ -127,7 +127,7 @@
                 </div>
             </div>
             <div v-show='stage == 3'>
-                <progress class='progress is-primary' max='100'></progress>
+                <progress class='progress is-primary' min='0' max='100' v-bind:value="progress">{{ progress }}</progress>
                 <button class='button is-danger' v-on:click='cancelDownload()'>Cancel</button>
             </div>
             <div v-show='stage == 4'>

@@ -85,6 +85,7 @@ Vue.component('yt-download-modal', {
             stage: 1,
             availableFormats: [],
             downloadLink: null,
+            progress: 0,
             downloadFormat: null,
             videoId: null,
             errorMessage: null,
@@ -172,6 +173,7 @@ Vue.component('yt-download-modal', {
                         this.stage = 4;
                         break;
                     default:
+                        this.progress = response.result.progress;
                         setTimeout(this.trackDownloading, 5000);
                 }
             })
