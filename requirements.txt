@@ -2,6 +2,7 @@ flask
 jinja2
 jsonschema
 youtube-dl
+yt_dlp
 sqlalchemy
 psycopg2
 zmq

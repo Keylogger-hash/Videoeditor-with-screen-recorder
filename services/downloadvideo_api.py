@@ -7,7 +7,7 @@ from sqlalchemy.sql import select
 from flask import Blueprint, current_app, request
 from database.datamodel import videos, download_videos
 import uuid
-import youtube_dl
+import yt_dlp
 from base64 import b32encode
 import requests
 from settings import DOWNLOADS_LOCATION
@@ -125,7 +125,7 @@ def get_info_about_youtube_video():
             "error": "Link is invalid"
         }
 
-    with youtube_dl.YoutubeDL() as ydl:
+    with yt_dlp.YoutubeDL() as ydl:
         info_dict = ydl.extract_info(link, download=False)
         formats = info_dict['formats']
         info = []
@@ -136,8 +136,8 @@ def get_info_about_youtube_video():
                 "quality": item["format"].split('- ')[1],
                 "fps": item["fps"]
             })
-        best_video = [item for item in info_dict['formats'] if item['asr'] is not None and item.get('quality', 0) != 0]
-        best_video = best_video[0]
+        best_video = [item for item in info_dict['formats'] if item['acodec'] == 'none']
+        best_video = best_video[-1]
         print(best_video)
         best_quality = best_video['format'].split('- ')[1]
         best_ext = best_video['ext']
@@ -150,13 +150,6 @@ def get_info_about_youtube_video():
         "best_format": best_quality,
         "best_ext": best_ext,
         "best_format_id": best_format_id,
-        "thumbnails": [{
-            "height": thumbnail["height"],
-            "url": thumbnail["url"],
-            "width": thumbnail["width"],
-            "resolution": thumbnail["resolution"]
-        } for thumbnail in info_dict["thumbnails"]
-        ],
         "info": info
     }
 
@@ -222,12 +215,12 @@ def start_downloading():
     format_ext = 'mp4'
     filesize = 0
     if result is None:
-        video_info = youtube_dl.YoutubeDL().extract_info(data['link'], download=False)
+        video_info = yt_dlp.YoutubeDL().extract_info(data['link'], download=False)
         title = video_info['title']
         for variant in video_info['formats']:
             if variant['format_id'] == format_id:
                 format_ext = variant['ext']
-                r = requests.head(variant['url'])
+                r = requests.get(variant['url'], stream=True)
                 filesize = int(r.headers['Content-Length'])
                 print(filesize)
                 break

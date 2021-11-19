@@ -1,5 +1,5 @@
 import subprocess
-import youtube_dl
+import yt_dlp
 
 class Error(BaseException):
 
