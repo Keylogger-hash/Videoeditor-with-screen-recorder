@@ -8,6 +8,7 @@ from flask import Blueprint, current_app, request
 from database.datamodel import videos, download_videos
 import uuid
 import yt_dlp
+import youtube_dl
 from base64 import b32encode
 import requests
 from settings import DOWNLOADS_LOCATION
@@ -88,6 +89,19 @@ def get_downloading_info(video_id):
             "error": "Record doesn't exist"
         }
     else:
+        if result['link'] is None or result['link'] == '':
+            return {
+                "success": True,
+                "result": {
+                    "id": result["video_id"],
+                    "title": result["title"],
+                    "filename": result["filename"],
+                    "link": result["link"],
+                    "quality": result["quality"],
+                    "status": TaskStatus(result['status']).name,
+                }
+            }
+
         path = os.path.join(DOWNLOADS_LOCATION, result['filename'].split('/')[0])
         if not os.path.exists(path):
             progress = 0.0
@@ -106,7 +120,7 @@ def get_downloading_info(video_id):
                 "filesize": result["filesize"],
                 "status": TaskStatus(result['status']).name,
                 "progress": progress
-            }
+                }
         }
 
 
@@ -215,7 +229,7 @@ def start_downloading():
     format_ext = 'mp4'
     filesize = 0
     if result is None:
-        video_info = yt_dlp.YoutubeDL().extract_info(data['link'], download=False)
+        video_info = youtube_dl.YoutubeDL().extract_info(data['link'], download=False)
         title = video_info['title']
         for variant in video_info['formats']:
             if variant['format_id'] == format_id:
