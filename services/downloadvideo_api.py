@@ -8,7 +8,6 @@ from flask import Blueprint, current_app, request
 from database.datamodel import videos, download_videos
 import uuid
 import yt_dlp
-import youtube_dl
 from base64 import b32encode
 import requests
 from settings import DOWNLOADS_LOCATION
@@ -229,7 +228,7 @@ def start_downloading():
     format_ext = 'mp4'
     filesize = 0
     if result is None:
-        video_info = youtube_dl.YoutubeDL().extract_info(data['link'], download=False)
+        video_info = yt_dlp.YoutubeDL().extract_info(data['link'], download=False)
         title = video_info['title']
         for variant in video_info['formats']:
             if variant['format_id'] == format_id:
