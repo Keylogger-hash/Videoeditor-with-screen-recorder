@@ -4,4 +4,4 @@ DOWNLOAD_SERVICE_ADDR = "tcp://127.0.0.1:6536"
 VIDEOCUT_SERVICE_WORKERS = 4
 DOWNLOADS_LOCATION = 'downloads'
 CUTS_LOCATION = 'cuts'
-YOUTUBE_DL_EXECUTABLE = '/usr/local/bin/youtube-dl'
+YOUTUBE_DL_EXECUTABLE = '/usr/local/bin/yt-dlp'

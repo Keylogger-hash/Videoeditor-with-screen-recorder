@@ -15,7 +15,7 @@ from shared.zmqserver import ZMQServer
 from database.datamodel import videos
 from settings import DOWNLOADS_LOCATION as UPLOADS_LOCATION
 
-WORKER_IPC_POLL = 30
+WORKER_IPC_POLL = 10
 
 
 class WorkerTask(object):

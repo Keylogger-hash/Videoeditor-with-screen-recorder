@@ -10,4 +10,4 @@ else:
 VIDEOCUT_SERVICE_WORKERS = 4
 DOWNLOADS_LOCATION = '/data/sources'
 CUTS_LOCATION = '/data/outputs'
-YOUTUBE_DL_EXECUTABLE = '/usr/local/bin/youtube-dl'
+YOUTUBE_DL_EXECUTABLE = '/usr/local/bin/yt-dlp'

@@ -6,7 +6,8 @@ CREATE TABLE public.download_videos (
     task_begin timestamp without time zone,
     task_end timestamp without time zone,
     status integer NOT NULL,
-    filename character varying NOT NULL
+    filename character varying NOT NULL,
+    filesize bigint
 );
 
 

@@ -11,7 +11,7 @@ var model = null;
 function formatSeconds(n){
     var m = Math.floor(n / 60);
     var s = n % 60;
-    return m + (s < 10 ? ':0' : ':') + s;
+    return m + (s < 10 ? ':0' : ':') + s.toFixed(1);
 }
 
 function loadSelectedSource(){
@@ -49,47 +49,20 @@ function updateProgress(outputFilename){
     })
 }
 
-function cutSelectedRange(){
-    var startTime = model.timeline.leftBorder;
-    var endTime = model.timeline.rightBorder;
-    var inputSource = currentVideo;
-    var outputStreams = document.all.editorCutStreams.options[document.all.editorCutStreams.selectedIndex].value;
-    var outputFilename = Math.floor(Date.now()) + '.mp4';
-    fetch(apiURL + '/cuts/', {
-        method: 'post',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ source: inputSource, startAt: startTime, endAt: endTime, keepStreams: outputStreams })
-    }).then(r => r.json())
-    .then((response) => {
-        if(response.success){
-            model.processingDialogVisible = true;
-            updateProgress(response.result.output);
-        } else {
-            alert('Error: ' + response.error);
-        }
-    })
-}
-
-function playSelectedRange(){
-    var player = document.all.editorPlayer;
-    document.all.editorPlayerProgress.max = Math.floor(selectionRange.end - selectionRange.start);
-    player.currentTime = selectionRange.start;
-    player.play();
-}
-
 function updateVideoMeta(){
     var player = document.all.editorPlayer;
-    model.timeline.setDuration(Math.floor(player.duration));
+    model.timeline.setDuration(Math.floor(player.duration * 10) / 10);
 }
 
 function playerUpdate(){
     var player = document.all.editorPlayer;
     if(player.paused) return;
     if(!isSeeking){
-        model.timeline.setPosition(Math.floor(player.currentTime), true);
+        model.timeline.setPosition(Math.floor(player.currentTime * 10) / 10, true);
         if(player.currentTime >= model.timeline.rightBorder){
             player.pause();
-            player.currentTime = model.timeline.rightBorder;
+            model.timeline.setPosition(model.timeline.rightBorder, true);
+            model.timeline.render();
         }
     }
 }
@@ -121,7 +94,11 @@ function main(){
             processingProgress: 0,
             outputName: null,
             downloadLink: null,
-            timeline: null
+            timeline: null,
+            selectionStart: 0,
+            selectionEnd: 0,
+            isPlaying: false,
+            isMuted: false
         },
         methods: {
             fetchSources: function(){
@@ -175,15 +152,60 @@ function main(){
                         }
                     }
                 })
+            },
+            /** playback methods **/
+            toggleMute: function(){
+                this.$refs.player.muted = !this.$refs.player.muted;
+            },
+            togglePlay: function(){
+                var player = this.$refs.player;
+                // TODO: fix icons
+                if(player.paused){
+                    player.play();
+                } else {
+                    player.pause();
+                }
+            },
+            jumpToStart: function(){
+                seek(this.timeline.leftBorder);
+            },
+            jumpToEnd: function(){
+                seek(this.timeline.rightBorder);
+            },
+            /** cut methods **/
+            setSelectionStart: function(){
+                this.timeline.setLeftBorder(this.timeline.position);
+            },
+            setSelectionEnd: function(){
+                this.timeline.setRightBorder(this.timeline.position);
+            },
+            resetSelection: function(){
+                this.timeline.setLeftBorder(0);
+                this.timeline.setRightBorder(this.timeline.duration);
+            },
+            /** zoom **/
+            timelineZoomIn: function(){
+                this.timeline.zoomIn();
+            },
+            timelineZoomOut: function(){
+                this.timeline.zoomOut();
             }
         },
         mounted: function(){
             var canvas = this.$refs.timelineCanvas;
             canvas.width = canvas.parentNode.offsetWidth;
+            window.addEventListener('resize', () => {
+                canvas.width = canvas.parentNode.offsetWidth;
+                this.timeline.render();
+            });
             this.timeline = new Timeline(canvas, 100, { followCursor: false });
             this.timeline.on('update', function(){
                 seek(this.timeline.position);
             }.bind(this));
+            this.timeline.on('rangeupdate', () => {
+                this.selectionStart = formatSeconds(this.timeline.leftBorder);
+                this.selectionEnd = formatSeconds(this.timeline.rightBorder);
+            });
             this.timeline.render();
         }
     });
@@ -191,40 +213,20 @@ function main(){
     document.querySelector('.dashboard').style.height = window.innerHeight + 'px';
     document.all.sourceLoadBtn.onclick = loadSelectedSource;
     document.all.sourceRefresh.onclick = model.fetchSources.bind(model);
-    //document.all.editorCutBtn.onclick = cutSelectedRange;
     document.all.editorPlayer.onloadedmetadata = updateVideoMeta;
-    document.all.editorPlayer.ontimeupdate = playerUpdate;
-    document.all.controlsCutStart.onclick = function(){
-        model.timeline.setLeftBorder(model.timeline.position);
+    //document.all.editorPlayer.ontimeupdate = playerUpdate;
+    document.all.editorPlayer.onpause = function(){
+        model.isPlaying = false;
+        clearInterval(window.positionUpdateInterval);
     };
-    document.all.controlsCutEnd.onclick = function(){
-        model.timeline.setRightBorder(model.timeline.position);
+    document.all.editorPlayer.onplay = function(){
+        model.isPlaying = true;
+        window.positionUpdateInterval = setInterval(playerUpdate, 100);
     };
-    document.all.controlsCutReset.onclick = function(){
-        model.timeline.setRightBorder(model.timeline.duration);
-        model.timeline.setLeftBorder(0);
-    }
-    document.all.controlsSeekStart.onclick = function(){
-        var player = document.all.editorPlayer;
-        seek(model.timeline.leftBorder);
+    document.all.editorPlayer.onvolumechange = function(event){
+        model.isMuted = event.target.muted;
     };
-    document.all.controlsSeekEnd.onclick = function(){
-        var player = document.all.editorPlayer;
-        seek(model.timeline.rightBorder);
-    };
-    document.all.controlsPlay.onclick = function(event){
-        var player = document.all.editorPlayer;
-        // TODO: fix icons
-        if(player.paused){
-            player.play();
-            document.all.controlsPlay.innerHTML = '<i class="fas fa-pause"></i>';
-        } else {
-            player.pause();
-            document.all.controlsPlay.innerHTML = '<i class="fas fa-play"></i>';
-        }
-    };
-    document.all.controlsZoomIn.onclick = function(){ model.timeline.zoomIn(); }
-    document.all.controlsZoomOut.onclick = function(){ model.timeline.zoomOut(); }
+
     if(location.search.length > 1){
         var params = new URLSearchParams(location.search);
         var videoId = params.get('video');

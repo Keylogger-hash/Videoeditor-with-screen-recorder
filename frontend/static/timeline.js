@@ -16,7 +16,7 @@ function Timeline(element, duration, options) {
     this.formatSeconds = function(n){
         var m = Math.floor(n / 60);
         var s = n % 60;
-        return m + (s < 10 ? ':0' : ':') + s;
+        return m + (s < 10 ? ':0' : ':') + s.toFixed(1);
     };
     this.zoomIn = function(){
         this.scale /= 2;
@@ -65,6 +65,7 @@ function Timeline(element, duration, options) {
             return false;
         }
         this.leftBorder = x;
+        this.fire('rangeupdate');
         this.render();
     };
     this.setRightBorder = function(x){
@@ -72,6 +73,7 @@ function Timeline(element, duration, options) {
             return false;
         }
         this.rightBorder = x;
+        this.fire('rangeupdate');
         this.render();
     };
     this.on = function(event, callback){
@@ -102,6 +104,20 @@ function Timeline(element, duration, options) {
         ctx.fillStyle = '#F004';
         ctx.fillRect(0, this.globalTimelineHeight, Math.floor(w * ((this.leftBorder - this.offset) / (this.duration * this.scale))), h);
         ctx.fillRect(Math.floor(w * ((this.rightBorder - this.offset) / (this.duration * this.scale))), this.globalTimelineHeight, w, h);
+        /** grid
+        var scaleStart = Math.ceil(this.offset * 10) / 10;
+        var scaleEnd = scaleStart + Math.ceil(this.duration * this.scale);
+        var scaleStep = ((w / (this.duration * this.scale)) > 40) ? 1 : 10;
+        for(var i = scaleStart * 10; i < scaleEnd * 10; i += scaleStep){
+            ctx.fillStyle = (i % 10 == 0) ? '#555' : '#333';
+            ctx.fillRect(
+                Math.floor(w * (0.1 * i - this.offset) / (this.duration * this.scale)),
+                this.globalTimelineHeight,
+                1,
+                h
+            );
+        }
+        **/
         // global cut area
         ctx.fillRect(0, 0, Math.floor(w * this.leftBorder / this.duration), this.globalTimelineHeight - 4);
         ctx.fillRect(Math.floor(w * this.rightBorder / this.duration), 0, w, this.globalTimelineHeight - 4);
@@ -110,8 +126,13 @@ function Timeline(element, duration, options) {
         var cursorX = Math.floor(w * ((this.position - this.offset) / (this.duration * this.scale)))
         ctx.fillRect(cursorX, this.globalTimelineHeight, 1, h - this.globalTimelineHeight);
         ctx.fillStyle = '#FFF';
-        ctx.textAlign = 'left';
-        ctx.fillText(self.formatSeconds(this.position), cursorX + 5, Math.floor(h / 2));
+        if(w - cursorX < 100){
+            ctx.textAlign = 'right';
+            ctx.fillText(self.formatSeconds(this.position), cursorX - 5, Math.floor(h / 2));
+        } else {
+            ctx.textAlign = 'left';
+            ctx.fillText(self.formatSeconds(this.position), cursorX + 5, Math.floor(h / 2));
+        }
         // local timecodes
         ctx.textAlign = 'left';
         ctx.fillText(self.formatSeconds(self.offset), 5, h - 5);
@@ -131,8 +152,13 @@ function Timeline(element, duration, options) {
             ctx.fillStyle = ((this.shadowPosition >= this.leftBorder) && (this.shadowPosition <= this.rightBorder)) ? '#080' : '#800';
             ctx.fillRect(cursorX, this.globalTimelineHeight, 1, h - this.globalTimelineHeight);
             ctx.fillStyle = '#888';
-            ctx.textAlign = 'left';
-            ctx.fillText(self.formatSeconds(this.shadowPosition), cursorX + 5, Math.floor(3 * h / 4));
+            if(w - cursorX < 100){
+                ctx.textAlign = 'right';
+                ctx.fillText(self.formatSeconds(this.shadowPosition), cursorX - 5, Math.floor(3 * h / 4));
+            } else {
+                ctx.textAlign = 'left';
+                ctx.fillText(self.formatSeconds(this.shadowPosition), cursorX + 5, Math.floor(3 * h / 4));
+            }
         }
     };
 
@@ -142,7 +168,7 @@ function Timeline(element, duration, options) {
         var x = e.pageX - e.target.offsetLeft;
         var y = e.pageY - e.target.offsetTop;
         if(y > self.globalTimelineHeight){
-            var position = self.offset + Math.round((x / w) * self.duration * self.scale);
+            var position = self.offset + Math.round((x / w) * self.duration * self.scale * 10) / 10;
             if((position < self.leftBorder) || (position > self.rightBorder)) return;
             self.setPosition(position);
         } else {
@@ -153,7 +179,7 @@ function Timeline(element, duration, options) {
             } else if((w - windowPosition) < windowSize){
                 windowPosition = w - windowSize;
             }
-            self.offset = Math.floor(self.duration * windowPosition / w);
+            self.offset = Math.floor(10 * self.duration * windowPosition / w) / 10;
         }
         self.render();
     });
@@ -171,7 +197,7 @@ function Timeline(element, duration, options) {
         var x = e.pageX - e.target.offsetLeft;
         var y = e.pageY - e.target.offsetTop;
         if(y > self.globalTimelineHeight){
-            self.shadowPosition = self.offset + Math.round((x / w) * self.duration * self.scale);
+            self.shadowPosition = self.offset + Math.round((x / w) * self.duration * self.scale * 10) / 10;
         } else {
             self.shadowPosition = null;
         }

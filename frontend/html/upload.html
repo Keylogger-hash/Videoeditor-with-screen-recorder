@@ -110,18 +110,24 @@
                 <div class='menu'>
                     <p class='menu-label'>Available formats</p>
                     <ul class='menu-list'>
-                        <li v-for='format in availableFormats'>
-                            <a v-on:click='submitDownload(format.format_id)'>{{ format.quality }} [{{ format.ext }}]</a>
-                        </li>
+                        <select class="form-control"  @change="changeFormatAvailable($event)">
+                            <option :value="availableFormats.best_format_id" selected>
+                                {{ availableFormats.best_format }} [{{ availableFormats.best_ext }}]
+                            </option>
+                            <option v-for="format in availableFormats.info" :value="format.format_id">
+                                    {{ format.quality }} [{{ format.ext }}]
+                            </option>
+                        </select>
+                        <p><span>Selected format: {{formatAvailable}}</span></p>
                     </ul>
                 </div>
                 <div class='buttons is-right'>
                     <button class='button is-text' type='button' v-on:click='$emit("close")'>Cancel</button>
-                    <button class='button' type='button' v-on:click='stage = 1'>Back</button>
+                    <a class='button' type='button' v-on:click='submitDownload(formatAvailable)'>Submit</a>
                 </div>
             </div>
             <div v-show='stage == 3'>
-                <progress class='progress is-primary' max='100'></progress>
+                <progress class='progress is-primary' min='0' max='100' v-bind:value="progress">{{ progress }}</progress>
                 <button class='button is-danger' v-on:click='cancelDownload()'>Cancel</button>
             </div>
             <div v-show='stage == 4'>

@@ -31,6 +31,7 @@ div {
     display: flex;
     flex-direction: column;
     /* min-width: 0px; */
+    background-color: #000;
 }
 .player-area video {
     flex: 1 1 0;
@@ -41,6 +42,9 @@ div {
     display: flex;
     justify-content: center;
     padding: 8px;
+}
+.controls-group {
+    align-self: center;
 }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
@@ -59,7 +63,7 @@ div {
 </script>
 <script type='text/template' id='cut-mode-selector'>
     <div class='control'>
-        <div class='select is-small'>
+        <div class='select'>
             <select v-bind:value='value' v-on:input='$emit("input", $event.target.value)'>
                 <option value='both'>Keep both streams</option>
                 <option value='audio'>Audio Only</option>
@@ -99,34 +103,26 @@ div {
                         </div>
                     </div>
                 </div>
-                <div style='padding: 4px; margin-left: auto'>
-                    <span id='editorCutProgress'></span>
-                    <div class='field has-addons'>
-                        <cut-mode-selector v-model='cutMode' ref='cutSelector'></cut-mode-selector>
-                        <div class='control'>
-                            <button class='button is-primary is-small' v-on:click='startCutting'>Cut</button>
-                        </div>
-                    </div>
-                </div>
             </div>
             <div class='player-area'>
-                <video id='editorPlayer'></video>
+                <video id='editorPlayer' ref='player'></video>
             </div>
             <div class='controls-area has-background-light'>
                 <div class='controls-group'>
                     <div class='field has-addons px-2'>
                         <div class='control'>
-                            <button class='button is-small is-dark' id='controlsSeekStart' title='To selection start'>
+                            <button class='button is-small is-dark' title='To selection start' v-on:click='jumpToStart'>
                                 <i class="fas fa-step-backward"></i>
                             </button>
                         </div>
                         <div class='control'>
-                            <button class='button is-small is-dark' id='controlsPlay' title='Play/pause'>
-                                <i class='fas fa-play'></i>
+                            <button class='button is-small is-dark' title='Play/pause' v-on:click='togglePlay'>
+                                <i class='fas fa-pause' v-if='isPlaying'></i>
+                                <i class='fas fa-play' v-else></i>
                             </button>
                         </div>
                         <div class='control'>
-                            <button class='button is-small is-dark' id='controlsSeekEnd' title='To selection end'>
+                            <button class='button is-small is-dark' title='To selection end' v-on:click='jumpToEnd'>
                                 <i class='fas fa-step-forward'></i>
                             </button>
                         </div>
@@ -135,17 +131,27 @@ div {
                 <div class='controls-group'>
                     <div class='field has-addons px-2'>
                         <div class='control'>
-                            <button class='button is-small is-dark' id='controlsCutStart' title='Selection start'>
+                            <button class='button is-small is-dark' v-bind:class='{"is-danger": isMuted}' title='Mute/Unmute' v-on:click='toggleMute'>
+                                <i class='fas fa-volume-mute' v-if='isMuted'></i>
+                                <i class='fas fa-volume-up' v-else></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class='controls-group'>
+                    <div class='field has-addons px-2'>
+                        <div class='control'>
+                            <button class='button is-small is-dark' title='Selection start' v-on:click='setSelectionStart'>
                                 <i class='fas fa-quote-left'></i>
                             </button>
                         </div>
                         <div class='control'>
-                            <button class='button is-small is-dark' id='controlsCutReset' title='Reset selection'>
+                            <button class='button is-small is-dark' title='Reset selection' v-on:click='resetSelection'>
                                 <i class='fas fa-window-close'></i>
                             </button>
                         </div>
                         <div class='control'>
-                            <button class='button is-small is-dark' id='controlsCutEnd' title='Selection end'>
+                            <button class='button is-small is-dark' title='Selection end' v-on:click='setSelectionEnd'>
                                 <i class='fas fa-quote-right'></i>
                             </button>
                         </div>
@@ -154,13 +160,39 @@ div {
                 <div class='controls-group'>
                     <div class='field has-addons px-2'>
                         <div class='control'>
-                            <button class='button is-small is-dark' id='controlsZoomIn' title='Zoom In'>
+                            <button class='button is-small is-dark' title='Zoom In' v-on:click='timelineZoomIn'>
                                 <i class='fas fa-search-plus'></i>
                             </button>
                         </div>
                         <div class='control'>
-                            <button class='button is-small is-dark' id='controlsZoomOut' title='Zoom Out'>
+                            <button class='button is-small is-dark' title='Zoom Out' v-on:click='timelineZoomOut'>
                                 <i class='fas fa-search-minus'></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class='controls-group px-2'>
+                    <div class='field is-grouped'>
+                        <div class='control' style='align-self: center'>
+                            Start:
+                        </div>
+                        <div class='control'>
+                            <input type='text' class='input is-static' v-bind:value="selectionStart" size='6' readonly>
+                        </div>
+                        <div class='control' style='align-self: center'>
+                            End:
+                        </div>
+                        <div class='control'>
+                            <input type='text' class='input is-static' v-bind:value="selectionEnd" size='6' readonly>
+                        </div>
+                    </div>
+                </div>
+                <div class='controls-group'>
+                    <div class='field has-addons'>
+                        <cut-mode-selector v-model='cutMode' ref='cutSelector'></cut-mode-selector>
+                        <div class='control'>
+                            <button class='button is-primary' v-on:click='startCutting'>
+                                <i class='fas fa-crop-alt'></i>
                             </button>
                         </div>
                     </div>
@@ -177,10 +209,13 @@ div {
                     <progress class='progress is-primary' min='0' max='100' v-bind:value='processingProgress'>{{ processingProgress }}%</progress>
                     <button class='button is-danger' v-on:click='cancelProcessing'>Cancel</button>
                 </div>
-                <div>
-                    <a v-bind:href='downloadLink' v-show='downloadLink != null' class='button is-primary'>Download result video</a>
+                <div v-show='downloadLink != null'>
+                    <div class='buttons'>
+                        <a v-bind:href='downloadLink' v-bind:download='outputName' class='button is-primary'>Download result video</a>
+                        <button class='button is-danger' v-on:click='processingDialogVisible = false'>Close</button>
+                    </div>
                 </div>
             </div>
-        </bulma-modal
+        </bulma-modal>
     </div>
 </body>
