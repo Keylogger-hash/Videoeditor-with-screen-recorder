@@ -85,9 +85,11 @@ Vue.component('yt-download-modal', {
             stage: 1,
             availableFormats: [],
             downloadLink: null,
+            progress: 0,
             downloadFormat: null,
             videoId: null,
-            errorMessage: null
+            errorMessage: null,
+            formatAvailable: null
         }
     },
     watch: {
@@ -108,11 +110,15 @@ Vue.component('yt-download-modal', {
                     return;
                 }
                 this.stage = 2;
-                this.availableFormats = response.info;
+                this.availableFormats = response;
+                this.formatAvailable = this.availableFormats['best_format_id']
             })
             .catch((error) => {
                 this.errorMessage = 'Failed to fetch variants: ' + error.toString();
             });
+        },
+        changeFormatAvailable: function(event){
+            this.formatAvailable=event.target.options[event.target.options.selectedIndex].value
         },
         submitDownload: function(formatId){
             fetch('/api/downloads/', {
@@ -167,6 +173,7 @@ Vue.component('yt-download-modal', {
                         this.stage = 4;
                         break;
                     default:
+                        this.progress = response.result.progress;
                         setTimeout(this.trackDownloading, 5000);
                 }
             })

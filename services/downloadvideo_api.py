@@ -7,13 +7,15 @@ from sqlalchemy.sql import select
 from flask import Blueprint, current_app, request
 from database.datamodel import videos, download_videos
 import uuid
-import youtube_dl
+import yt_dlp
 from base64 import b32encode
+import requests
 from settings import DOWNLOADS_LOCATION
 from download_service.common import TaskStatus
 
 
 api = Blueprint('downloadvideo_api', __name__)
+quality_video = ["mp4", "webm", "mov"]
 
 
 class DownloadVideoApi(object):
@@ -35,11 +37,12 @@ class DownloadVideoApi(object):
         socket.close()
         return json.loads(message.decode('UTF-8'))
 
-    def start(self, link: str, format_id: int, destination: str):
+    def start(self, link: str, format_id: int, format_ext: str,destination: str):
         return self._send({
             "method": "download",
             "destination": destination,
             "format_id": format_id,
+            "format_ext": format_ext,
             "link": link
         })
 
@@ -85,16 +88,24 @@ def get_downloading_info(video_id):
             "error": "Record doesn't exist"
         }
     else:
+        path = os.path.join(DOWNLOADS_LOCATION, result['filename'].split('/')[0])
+        if not os.path.exists(path):
+            progress = 0.0
+        else:
+            video_filename = os.listdir(path)
+            full_path = os.path.join(path, video_filename[0])
+            progress = round(os.stat(full_path).st_size / result['filesize'] * 100, 2)
         return {
             "success": True,
             "result": {
-                "id": result['video_id'],
-                "title": result['title'],
-                "filename": result['filename'],
-                "link": result["link"],
+                "id": result["video_id"],
                 "title": result["title"],
+                "filename": result["filename"],
+                "link": result["link"],
                 "quality": result["quality"],
-                "status": TaskStatus(result['status']).name
+                "filesize": result["filesize"],
+                "status": TaskStatus(result['status']).name,
+                "progress": progress
             }
         }
 
@@ -114,26 +125,32 @@ def get_info_about_youtube_video():
             "error": "Link is invalid"
         }
 
-    with youtube_dl.YoutubeDL() as ydl:
+    with yt_dlp.YoutubeDL() as ydl:
         info_dict = ydl.extract_info(link, download=False)
         formats = info_dict['formats']
+        info = []
+        for item in formats:
+            info.append({
+                "format_id": item["format_id"],
+                "ext": item["ext"],
+                "quality": item["format"].split('- ')[1],
+                "fps": item["fps"]
+            })
+        best_video = [item for item in info_dict['formats'] if item['acodec'] == 'none']
+        best_video = best_video[-1]
+        print(best_video)
+        best_quality = best_video['format'].split('- ')[1]
+        best_ext = best_video['ext']
+        best_format_id = best_video['format_id']
+
     return {
         "success": True,
         "error": None,
         "title": info_dict["title"],
-        "thumbnails": [{
-            "height": thumbnail["height"],
-            "url": thumbnail["url"],
-            "width": thumbnail["width"],
-            "resolution": thumbnail["resolution"]
-        } for thumbnail in info_dict["thumbnails"]
-        ],
-        "info": [{
-            "format_id": item["format_id"],
-            "ext": item["ext"],
-            "quality": item["format"].split('- ')[1],
-            "fps": item["fps"]
-        } for item in formats]
+        "best_format": best_quality,
+        "best_ext": best_ext,
+        "best_format_id": best_format_id,
+        "info": info
     }
 
 
@@ -196,21 +213,24 @@ def start_downloading():
         }
 
     format_ext = 'mp4'
-
+    filesize = 0
     if result is None:
-        video_info = youtube_dl.YoutubeDL().extract_info(data['link'], download=False)
+        video_info = yt_dlp.YoutubeDL().extract_info(data['link'], download=False)
         title = video_info['title']
         for variant in video_info['formats']:
             if variant['format_id'] == format_id:
                 format_ext = variant['ext']
+                r = requests.get(variant['url'], stream=True)
+                filesize = int(r.headers['Content-Length'])
+                print(filesize)
                 break
         quality = "{} - {}".format(format_ext, format_id)
         video_id = uuid.uuid4()
         output_filename = os.path.join(b32encode(video_id.bytes).strip(b'=').lower().decode('ascii'), 'video.' + format_ext)
-
         dbe.execute(
             download_videos.insert().values(
                 video_id=video_id,
+                filesize=filesize,
                 link=link,
                 quality=quality,
                 title=title,
@@ -225,6 +245,7 @@ def start_downloading():
     download_service = DownloadVideoApi(current_app.config.get('DOWNLOAD_SERVICE_ADDR'))
     resp = download_service.start(link=data["link"],
                                   format_id=format_id,
+                                  format_ext=format_ext,
                                   destination=output_filename)
     print(resp)
     if resp["ok"]:

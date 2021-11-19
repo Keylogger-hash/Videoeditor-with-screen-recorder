@@ -42,11 +42,11 @@ class ProcessingTasks(Thread):
         self.tasks = {}
         self.youtubedl_executor = YoutubeDlExecutor(self.tasks_datastream, max_workers=self.limit)
 
-    def add_task(self, link: str, format_id: int, destination: str):
+    def add_task(self, link: str, format_id: int, format_ext: str,destination: str):
         if link in self.tasks:
             raise KeyError('Link is queued already')
         self.on_status_changed(link, TaskStatus.WORKING)
-        future = self.youtubedl_executor.submit(link=link, format_id=format_id,destination=destination)
+        future = self.youtubedl_executor.submit(link=link, format_id=format_id,format_ext=format_ext,destination=destination)
         self.tasks[link] = WorkerTask(link, future)
 
     def on_status_changed(self, link: str, status: TaskStatus):
@@ -131,7 +131,7 @@ def start_server(address: str, worker: ProcessingTasks):
                     if request['link'] is None:
                         raise ValueError("Not link")
                     print("Download starting")
-                    worker.add_task(request['link'], request['format_id'], request['destination'])
+                    worker.add_task(request['link'], request['format_id'], request['format_ext'], request['destination'])
                 elif request['method'] == 'cancel':
                     worker.stop(request['link'])
                 elif request['method'] == 'list':
