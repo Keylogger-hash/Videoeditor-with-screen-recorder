@@ -102,7 +102,7 @@ def get_downloading_info(video_id):
             }
 
         path = os.path.join(DOWNLOADS_LOCATION, result['filename'].split('/')[0])
-        if not os.path.exists(path):
+        if not os.path.exists(path) or result['filesize'] is None:
             progress = 0.0
         else:
             video_filename = os.listdir(path)

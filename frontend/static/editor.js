@@ -92,6 +92,7 @@ function main(){
             selectedSource: null,
             processingDialogVisible: false,
             processingProgress: 0,
+            processingError: null,
             outputName: null,
             downloadLink: null,
             timeline: null,
@@ -99,6 +100,11 @@ function main(){
             selectionEnd: 0,
             isPlaying: false,
             isMuted: false
+        },
+        watch: {
+            processingDialogVisible: function(){
+                this.processingError = null;
+            }
         },
         methods: {
             fetchSources: function(){
@@ -136,6 +142,7 @@ function main(){
                         return;
                     }
                     this.processingDialogVisible = false;
+                    this.processingError = null;
                 });
             },
             trackProcessingStatus: function(){
@@ -147,6 +154,8 @@ function main(){
                         if((data.result.status == 'QUEUED') || (data.result.status == 'WORKING') || (data.result.status == 'INACTIVE')){
                             this.processingProgress = data.result.progress;
                             setTimeout(this.trackProcessingStatus.bind(this), 2000);
+                        } else if(data.result.status == 'FAILED') {
+                            this.processingError = data.error;
                         } else {
                             this.downloadLink = cutsBaseURL + this.outputName;
                         }

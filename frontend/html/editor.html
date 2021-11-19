@@ -206,7 +206,8 @@ div {
             <div class='box content'>
                 <h2>Processing video</h2>
                 <div v-show='downloadLink == null'>
-                    <progress class='progress is-primary' min='0' max='100' v-bind:value='processingProgress'>{{ processingProgress }}%</progress>
+                    <div class='notification is-danger' v-if='processingError != null'>Error during processing: {{ processingError }}</div>
+                    <progress class='progress is-primary' v-bind:class='{"is-danger": processingError != null}' min='0' max='100' v-bind:value='processingProgress'>{{ processingProgress }}%</progress>
                     <button class='button is-danger' v-on:click='cancelProcessing'>Cancel</button>
                 </div>
                 <div v-show='downloadLink != null'>
