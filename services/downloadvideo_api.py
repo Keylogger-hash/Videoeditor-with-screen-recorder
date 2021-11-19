@@ -89,6 +89,19 @@ def get_downloading_info(video_id):
             "error": "Record doesn't exist"
         }
     else:
+        if result['link'] is None or result['link'] == '':
+            return {
+                "success": True,
+                "result": {
+                    "id": result["video_id"],
+                    "title": result["title"],
+                    "filename": result["filename"],
+                    "link": result["link"],
+                    "quality": result["quality"],
+                    "status": TaskStatus(result['status']).name,
+                }
+            }
+
         path = os.path.join(DOWNLOADS_LOCATION, result['filename'].split('/')[0])
         if not os.path.exists(path):
             progress = 0.0
@@ -107,7 +120,7 @@ def get_downloading_info(video_id):
                 "filesize": result["filesize"],
                 "status": TaskStatus(result['status']).name,
                 "progress": progress
-            }
+                }
         }
 
 

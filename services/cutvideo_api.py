@@ -20,7 +20,7 @@ TASK_ADD_REQUEST_SCHEMA = {
     'oneOf': [
         {
             'type': 'object',
-            'required': [ 'source', 'startAt', 'endAt', 'keepStreams' ],
+            'required': ['source', 'startAt', 'endAt', 'keepStreams' ],
             'properties': {
                 'source': {
                     'type': 'string'
