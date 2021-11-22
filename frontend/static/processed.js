@@ -5,7 +5,16 @@ function main(){
         el: '#app',
         data: {
             videos: [],
+            previewName: null,
             previewFile: null
+        },
+        computed: {
+            previewLink: function(){
+                return '/files/cuts/' + this.previewName;
+            },
+            shareLink: function(){
+                return location.protocol + '//' + location.host + '/play/' + this.previewName;
+            }
         },
         methods: {
             fetchVideos: function(){
@@ -20,7 +29,7 @@ function main(){
                 })
             },
             previewVideo: function(videoName){
-                this.previewFile = '/files/cuts/' + videoName;
+                this.previewName = videoName;
             },
             deleteVideo: function(videoId){
                 fetch('/api/cuts/' + videoId, {
@@ -34,12 +43,18 @@ function main(){
                     }
                     this.fetchVideos();
                 })
+            },
+            copyShareLink: function(e){
+                var linkInput = e.target;
+                linkInput.select();
+                document.execCommand('copy');
+                //this.clipboardTooltip.show();
             }
         },
         mounted: function(){
             this.fetchVideos();
         }
     });
+    tippy(document.querySelector('#shareVideoLink'), { trigger: 'click', content: 'Copied to clipboard' });
 }
-
 document.addEventListener('DOMContentLoaded', main);

@@ -106,6 +106,11 @@ function main(){
                 this.processingError = null;
             }
         },
+        computed: {
+            shareLink: function(){
+                return location.protocol + '//' + location.host + '/play/' + this.outputName;
+            }
+        },
         methods: {
             fetchSources: function(){
                 fetch(apiURL + '/downloads/')
@@ -198,6 +203,12 @@ function main(){
             },
             timelineZoomOut: function(){
                 this.timeline.zoomOut();
+            },
+            copyShareLink: function(e){
+                var linkInput = e.target;
+                linkInput.select();
+                document.execCommand('copy');
+                //this.clipboardTooltip.show();
             }
         },
         mounted: function(){
@@ -245,6 +256,7 @@ function main(){
         }
     }
     model.fetchSources();
+    tippy(document.querySelector('#shareVideoLink'), { trigger: 'click', content: 'Copied to clipboard' });
 }
 
 Vue.component('cut-mode-selector', {

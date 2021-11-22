@@ -4,6 +4,8 @@
 <title>Editor</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/all.min.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.3/css/bulma.min.css">
+<script src="https://unpkg.com/@popperjs/core@2/dist/umd/popper.min.js"></script>
+<script src="https://unpkg.com/tippy.js@6/dist/tippy-bundle.umd.js"></script>
 <style>
 html {
     overflow-y: auto;
@@ -211,6 +213,12 @@ div {
                     <button class='button is-danger' v-on:click='cancelProcessing'>Cancel</button>
                 </div>
                 <div v-show='downloadLink != null'>
+                    <div class='field'>
+                        <div class='control'>
+                            <label>Link to player</label>
+                            <input id='shareVideoLink' type='text' class='input' v-bind:value='shareLink' v-on:click='copyShareLink' readonly />
+                        </div>
+                    </div>
                     <div class='buttons'>
                         <a v-bind:href='downloadLink' v-bind:download='outputName' class='button is-primary'>Download result video</a>
                         <button class='button is-danger' v-on:click='processingDialogVisible = false'>Close</button>
