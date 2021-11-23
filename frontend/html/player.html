@@ -1,0 +1,31 @@
+<!doctype html>
+<head>
+    <meta charset='utf-8' />
+    <link rel="stylesheet" href="https://cdn.plyr.io/3.6.9/plyr.css" />
+    <script src="https://cdn.plyr.io/3.6.9/plyr.js"></script>
+    <style>
+        html, body {
+            height: 100%;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+        }
+        .plyr {
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+    <script>
+        document.addEventListener('DOMContentLoaded', function(){
+            var player = new Plyr('#main-player');
+        });
+    </script>
+</head>
+<body>
+    <video id='main-player' controls>
+        <source src='/files/cuts/{{ output_name }}' type='video/mp4'></source>
+    </video>
+</body>
