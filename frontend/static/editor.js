@@ -91,10 +91,6 @@ function main(){
             sources: [],
             selectedSource: null,
             processingDialogVisible: false,
-            processingProgress: 0,
-            processingError: null,
-            outputName: null,
-            downloadLink: null,
             timeline: null,
             selectionStart: 0,
             selectionEnd: 0,
@@ -107,8 +103,11 @@ function main(){
             }
         },
         computed: {
-            shareLink: function(){
-                return location.protocol + '//' + location.host + '/play/' + this.outputName;
+            formattedStart: function(){
+                return formatSeconds(this.selectionStart);
+            },
+            formattedEnd: function(){
+                return formatSeconds(this.selectionEnd);
             }
         },
         methods: {
@@ -120,52 +119,7 @@ function main(){
                 })
             },
             startCutting: function(){
-                var startTime = this.timeline.leftBorder;
-                var endTime = this.timeline.rightBorder;
-                var inputSource = this.selectedSource;
-                fetch(apiURL + '/cuts/', {
-                    method: 'post',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ source: inputSource, startAt: startTime, endAt: endTime, keepStreams: this.cutMode })
-                }).then(r => r.json())
-                .then((response) => {
-                    if(response.success){
-                        this.processingDialogVisible = true;
-                        this.outputName = response.result.output;
-                        updateProgress(response.result.output);
-                    } else {
-                        alert('Error: ' + response.error);
-                    }
-                })
-            },
-            cancelProcessing: function(){
-                fetch(apiURL + '/cuts/' + this.outputName, { method: 'DELETE' })
-                .then(r => r.json())
-                .then((response) => {
-                    if(!response.success){
-                        console.warn(response.error);
-                        return;
-                    }
-                    this.processingDialogVisible = false;
-                    this.processingError = null;
-                });
-            },
-            trackProcessingStatus: function(){
-                if(this.outputName == null) return;
-                fetch(apiURL + '/cuts/' + this.outputName)
-                .then(r => r.json())
-                .then((data) => {
-                    if(data.success){
-                        if((data.result.status == 'QUEUED') || (data.result.status == 'WORKING') || (data.result.status == 'INACTIVE')){
-                            this.processingProgress = data.result.progress;
-                            setTimeout(this.trackProcessingStatus.bind(this), 2000);
-                        } else if(data.result.status == 'FAILED') {
-                            this.processingError = data.error;
-                        } else {
-                            this.downloadLink = cutsBaseURL + this.outputName;
-                        }
-                    }
-                })
+                this.processingDialogVisible = true;
             },
             /** playback methods **/
             toggleMute: function(){
@@ -186,6 +140,15 @@ function main(){
             jumpToEnd: function(){
                 seek(this.timeline.rightBorder);
             },
+            jump: function(offset){
+                if(this.timeline.position + offset < this.timeline.leftBorder){
+                    seek(this.timeline.leftBorder);
+                } else if(this.timeline.position + offset > this.timeline.rightBorder){
+                    seek(this.timeline.rightBorder);
+                } else {
+                    seek(this.timeline.position + offset);
+                }
+            },
             /** cut methods **/
             setSelectionStart: function(){
                 this.timeline.setLeftBorder(this.timeline.position);
@@ -203,12 +166,6 @@ function main(){
             },
             timelineZoomOut: function(){
                 this.timeline.zoomOut();
-            },
-            copyShareLink: function(e){
-                var linkInput = e.target;
-                linkInput.select();
-                document.execCommand('copy');
-                //this.clipboardTooltip.show();
             }
         },
         mounted: function(){
@@ -223,8 +180,8 @@ function main(){
                 seek(this.timeline.position);
             }.bind(this));
             this.timeline.on('rangeupdate', () => {
-                this.selectionStart = formatSeconds(this.timeline.leftBorder);
-                this.selectionEnd = formatSeconds(this.timeline.rightBorder);
+                this.selectionStart = this.timeline.leftBorder;
+                this.selectionEnd = this.timeline.rightBorder;
             });
             this.timeline.render();
         }
@@ -267,5 +224,99 @@ Vue.component('cut-mode-selector', {
         }
     }
 });
+
+Vue.component('video-cut-form', {
+    template: '#cut-form',
+    props: ['source', 'start', 'end', 'mode'],
+    data: function(){
+        return {
+            stage: 'describe',
+            error: null,
+            progress: null,
+            outputName: null,
+            description: ''
+        }
+    },
+    computed: {
+        shareLink: function(){
+            return location.protocol + '//' + location.host + '/play/' + this.outputName;
+        },
+        downloadLink: function(){
+            return cutsBaseURL + this.outputName;
+        },
+        startf: function(){
+            return formatSeconds(this.start);
+        },
+        endf: function(){
+            return formatSeconds(this.end);
+        },
+    },
+    methods: {
+        reset: function(){
+            this.stage = 'describe';
+            this.error = null;
+            this.progress = 0;
+            this.outputName = null;
+            this.description = '';
+        },
+        startProcessing: function(){
+            fetch(apiURL + '/cuts/', {
+                method: 'post',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    source: this.source,
+                    startAt: this.start,
+                    endAt: this.end,
+                    keepStreams: this.mode,
+                    description: this.description
+                })
+            }).then(r => r.json())
+            .then((response) => {
+                this.stage = 'process';
+                if(response.success){
+                    this.outputName = response.result.output;
+                    this.watchProcessing();
+                } else {
+                    this.error = response.error;
+                }
+            })
+        },
+        watchProcessing: function(){
+            if(this.outputName == null) return;
+            fetch(apiURL + '/cuts/' + this.outputName)
+            .then(r => r.json())
+            .then((data) => {
+                if(data.success){
+                    if((data.result.status == 'QUEUED') || (data.result.status == 'WORKING') || (data.result.status == 'INACTIVE')){
+                        this.progress = data.result.progress;
+                        setTimeout(this.watchProcessing.bind(this), 2000);
+                    } else if(data.result.status == 'FAILED') {
+                        this.error = data.error;
+                    } else {
+                        this.stage = 'done';
+                    }
+                }
+            })
+        },
+        cancelProcessing: function(){
+            fetch(apiURL + '/cuts/' + this.outputName, { method: 'DELETE' })
+            .then(r => r.json())
+            .then((response) => {
+                if(!response.success){
+                    console.warn(response.error);
+                    return;
+                }
+                this.$emit('close');
+                this.reset();
+            });
+        },
+        copyShareLink: function(e){
+            var linkInput = e.target;
+            linkInput.select();
+            document.execCommand('copy');
+            //this.clipboardTooltip.show();
+        }
+    }
+})
 
 document.addEventListener('DOMContentLoaded', main);

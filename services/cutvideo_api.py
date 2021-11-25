@@ -38,6 +38,9 @@ TASK_ADD_REQUEST_SCHEMA = {
                     'enum': [
                         'both', 'video', 'audio'
                     ]
+                },
+                'description': {
+                    'type': 'string'
                 }
             }
         },
@@ -61,6 +64,9 @@ TASK_ADD_REQUEST_SCHEMA = {
                     'enum': [
                         'both', 'video', 'audio'
                     ]
+                },
+                'description': {
+                    'type': 'string'
                 }
             }
         }
@@ -136,6 +142,7 @@ def get_cut_list(db):
         'cuts': [
             {
                 'filename': item['output_filename'],
+                'description': item['description'],
                 'link': get_link_to_cut_video(item['output_filename']),
                 'source': item['source'],
                 'taskStartedAt': item['task_begin'],
@@ -160,6 +167,7 @@ def get_cut_info(output_name, db):
         'success': True,
         'result': {
             'filename': result['output_filename'],
+            'description': result['description'],
             'link': get_link_to_cut_video(result['output_filename']),
             'source': result['source'],
             'taskStartedAt': result['task_begin'],
@@ -218,7 +226,8 @@ def start_videocut(db):
                 output_filename=output_name,
                 source=data['source'],
                 status=TaskStatus.INACTIVE.value,
-                progress=0
+                progress=0,
+                description=data['description']
             )
         )
     else:

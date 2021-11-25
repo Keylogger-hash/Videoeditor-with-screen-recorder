@@ -1,6 +1,9 @@
 <!doctype html>
 <head>
     <meta charset='utf-8' />
+    {% if title != '' %}
+    <title>{{ title }}</title>
+    {% endif %}
     <link rel="stylesheet" href="https://cdn.plyr.io/3.6.9/plyr.css" />
     <script src="https://cdn.plyr.io/3.6.9/plyr.js"></script>
     <style>

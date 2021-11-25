@@ -32,7 +32,7 @@
             <table class='table is-fullwidth'>
                 <thead>
                     <tr>
-                        <th>Filename</th>
+                        <th>Description</th>
                         <th>Status</th>
                         <th>Started at</th>
                         <th>Stopped at</th>
@@ -40,7 +40,8 @@
                     </tr>
                 </thead>
                 <tr v-for='video in videos'>
-                    <td>{{ video.filename }}</td>
+                    <td v-if='video.description == ""'>{{ video.filename }}</td>
+                    <td v-else>{{ video.description }}</td>
                     <td>
                         <div class='tag' v-bind:class='{ "is-danger": video.status == "FAILED", "is-success": video.status == "COMPLETED", "is-warning": video.status == "INACTIVE" }'>{{ video.status }}</div>
                     </td>
@@ -58,7 +59,7 @@
         <bulma-modal v-bind:is-shown='previewName != null' v-on:close='previewName = null'>
             <div class='box content'>
                 <h3>Preview</h3>
-                <video v-bind:src='previewLink == null ? "" : previewLink' controls></video>
+                <video style='width: 100%' v-bind:src='previewLink == null ? "" : previewLink' controls></video>
                 <div class='field'>
                     <div class='control'>
                         <label>Link to player</label>
