@@ -48,6 +48,14 @@ div {
 .controls-group {
     align-self: center;
 }
+.caption-under-icon .button {
+    /* height: 4em; */
+    flex-direction: column;
+}
+.caption-under-icon .button > .caption {
+    font-size: 80%;
+    margin: -3px 5px;
+}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
 <script src='/static/components.js'></script>
@@ -71,6 +79,40 @@ div {
                 <option value='audio'>Audio Only</option>
                 <option value='video'>Video Only</option>
             </select>
+        </div>
+    </div>
+</script>
+<script type='text/template' id='cut-form'>
+    <div class='box content'>
+        <h2>Processing video</h2>
+        <div v-show='stage == "describe"'>
+            <div class='field'>
+                <div class='control'>
+                    <label>Short video description</label>
+                    <textarea class='textarea' v-model='description'></textarea>
+                </div>
+            </div>
+            <div class='buttons'>
+                <button class='button is-primary' v-on:click='startProcessing'>Start</button>
+                <button class='button is-danger' v-on:click='$emit("close")'>Close</button>
+            </div>
+        </div>
+        <div v-show='stage == "process"'>
+            <div class='notification is-danger' v-if='error != null'>Error during processing: {{ error }}</div>
+            <progress class='progress is-primary' v-bind:class='{"is-danger": error != null}' min='0' max='100' v-bind:value='progress'>{{ progress }}%</progress>
+            <button class='button is-danger' v-on:click='cancelProcessing'>Cancel</button>
+        </div>
+        <div v-show='stage == "done"'>
+            <div class='field'>
+                <div class='control'>
+                    <label>Link to player</label>
+                    <input id='shareVideoLink' type='text' class='input' v-bind:value='shareLink' v-on:click='copyShareLink' readonly />
+                </div>
+            </div>
+            <div class='buttons'>
+                <a v-bind:href='downloadLink' v-bind:download='outputName' class='button is-primary'>Download result video</a>
+                <button class='button is-danger' v-on:click='$emit("close")'>Close</button>
+            </div>
         </div>
     </div>
 </script>
@@ -111,16 +153,64 @@ div {
             </div>
             <div class='controls-area has-background-light'>
                 <div class='controls-group'>
-                    <div class='field has-addons px-2'>
+                    <div class='field has-addons caption-under-icon px-2'>
                         <div class='control'>
                             <button class='button is-small is-dark' title='To selection start' v-on:click='jumpToStart'>
                                 <i class="fas fa-step-backward"></i>
                             </button>
                         </div>
                         <div class='control'>
+                            <button class='button is-small is-dark' title='Back 10m' v-on:click='jump(-600)'>
+                                <i class='fas fa-angle-double-left'></i>
+                                <div class='caption'>10m</small>
+                            </button>
+                        </div>
+                        <div class='control'>
+                            <button class='button is-small is-dark' title='Back 1m' v-on:click='jump(-60)'>
+                                <i class='fas fa-angle-double-left'></i>
+                                <div class='caption'>1m</small>
+                            </button>
+                        </div>
+                        <div class='control'>
+                            <button class='button is-small is-dark' title='Back 10s' v-on:click='jump(-10)'>
+                                <i class='fas fa-angle-double-left'></i>
+                                <div class='caption'>10s</small>
+                            </button>
+                        </div>
+                        <div class='control'>
+                            <button class='button is-small is-dark' title='Back 1s' v-on:click='jump(-1)'>
+                                <i class='fas fa-angle-double-left'></i>
+                                <div class='caption'>1s</small>
+                            </button>
+                        </div>
+                        <div class='control'>
                             <button class='button is-small is-dark' title='Play/pause' v-on:click='togglePlay'>
                                 <i class='fas fa-pause' v-if='isPlaying'></i>
                                 <i class='fas fa-play' v-else></i>
+                            </button>
+                        </div>
+                        <div class='control'>
+                            <button class='button is-small is-dark' title='Forward 1s' v-on:click='jump(1)'>
+                                <i class='fas fa-angle-double-right'></i>
+                                <div class='caption'>1s</small>
+                            </button>
+                        </div>
+                        <div class='control'>
+                            <button class='button is-small is-dark' title='Forward 10s' v-on:click='jump(10)'>
+                                <i class='fas fa-angle-double-right'></i>
+                                <div class='caption'>10s</small>
+                            </button>
+                        </div>
+                        <div class='control'>
+                            <button class='button is-small is-dark' title='Forward 1m' v-on:click='jump(60)'>
+                                <i class='fas fa-angle-double-right'></i>
+                                <div class='caption'>1m</small>
+                            </button>
+                        </div>
+                        <div class='control'>
+                            <button class='button is-small is-dark' title='Forward 10m' v-on:click='jump(600)'>
+                                <i class='fas fa-angle-double-right'></i>
+                                <div class='caption'>10m</small>
                             </button>
                         </div>
                         <div class='control'>
@@ -179,13 +269,13 @@ div {
                             Start:
                         </div>
                         <div class='control'>
-                            <input type='text' class='input is-static' v-bind:value="selectionStart" size='6' readonly>
+                            <input type='text' class='input is-static' v-bind:value="formattedStart" size='6' readonly>
                         </div>
                         <div class='control' style='align-self: center'>
                             End:
                         </div>
                         <div class='control'>
-                            <input type='text' class='input is-static' v-bind:value="selectionEnd" size='6' readonly>
+                            <input type='text' class='input is-static' v-bind:value="formattedEnd" size='6' readonly>
                         </div>
                     </div>
                 </div>
@@ -193,7 +283,7 @@ div {
                     <div class='field has-addons'>
                         <cut-mode-selector v-model='cutMode' ref='cutSelector'></cut-mode-selector>
                         <div class='control'>
-                            <button class='button is-primary' v-on:click='startCutting'>
+                            <button class='button is-primary' v-on:click='startCutting' title='Cut'>
                                 <i class='fas fa-crop-alt'></i>
                             </button>
                         </div>
@@ -205,26 +295,13 @@ div {
             </div>
         </div>
         <bulma-modal v-bind:is-shown='processingDialogVisible' v-on:close='processingDialogVisible = false'>
-            <div class='box content'>
-                <h2>Processing video</h2>
-                <div v-show='downloadLink == null'>
-                    <div class='notification is-danger' v-if='processingError != null'>Error during processing: {{ processingError }}</div>
-                    <progress class='progress is-primary' v-bind:class='{"is-danger": processingError != null}' min='0' max='100' v-bind:value='processingProgress'>{{ processingProgress }}%</progress>
-                    <button class='button is-danger' v-on:click='cancelProcessing'>Cancel</button>
-                </div>
-                <div v-show='downloadLink != null'>
-                    <div class='field'>
-                        <div class='control'>
-                            <label>Link to player</label>
-                            <input id='shareVideoLink' type='text' class='input' v-bind:value='shareLink' v-on:click='copyShareLink' readonly />
-                        </div>
-                    </div>
-                    <div class='buttons'>
-                        <a v-bind:href='downloadLink' v-bind:download='outputName' class='button is-primary'>Download result video</a>
-                        <button class='button is-danger' v-on:click='processingDialogVisible = false'>Close</button>
-                    </div>
-                </div>
-            </div>
+            <video-cut-form
+                v-bind:source='selectedSource'
+                v-bind:start='selectionStart'
+                v-bind:end='selectionEnd'
+                v-bind:mode='cutMode'
+                v-on:close='processingDialogVisible = false'
+                ></video-cut-form>
         </bulma-modal>
     </div>
 </body>
