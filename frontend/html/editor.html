@@ -84,11 +84,21 @@ div {
 </script>
 <script type='text/template' id='cut-form'>
     <div class='box content'>
-        <h2>Processing video</h2>
+        <h2>Cut video</h2>
         <div v-show='stage == "describe"'>
+            <div class='field is-grouped'>
+                <div class='control'>
+                    <label class='label'>Start</label>
+                    <input class='input' readonly v-bind:value='startf' />
+                </div>
+                <div class='control'>
+                    <label class='label'>End</label>
+                    <input class='input' readonly v-bind:value='endf' />
+                </div>
+            </div>
             <div class='field'>
                 <div class='control'>
-                    <label>Short video description</label>
+                    <label class='label'>Short video description</label>
                     <textarea class='textarea' v-model='description'></textarea>
                 </div>
             </div>

@@ -118,6 +118,9 @@ function main(){
                     this.sources = sources.filter((item) => { return item.status == 'COMPLETED' });
                 })
             },
+            startCutting: function(){
+                this.processingDialogVisible = true;
+            },
             /** playback methods **/
             toggleMute: function(){
                 this.$refs.player.muted = !this.$refs.player.muted;
@@ -240,7 +243,13 @@ Vue.component('video-cut-form', {
         },
         downloadLink: function(){
             return cutsBaseURL + this.outputName;
-        }
+        },
+        startf: function(){
+            return formatSeconds(this.start);
+        },
+        endf: function(){
+            return formatSeconds(this.end);
+        },
     },
     methods: {
         reset: function(){
