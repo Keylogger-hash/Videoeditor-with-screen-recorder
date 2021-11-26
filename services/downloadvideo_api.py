@@ -142,18 +142,27 @@ def get_info_about_youtube_video():
         info_dict = ydl.extract_info(link, download=False)
         formats = info_dict['formats']
         info = []
-        for item in formats:
-            info.append({
-                "format_id": item["format_id"],
-                "ext": item["ext"],
-                "quality": item["format"].split('- ')[1],
-                "fps": item["fps"]
-            })
-        best_video = [item for item in info_dict['formats'] if item['acodec'] == 'none']
-        best_video = best_video[-1]
-        print(best_video)
-        best_quality = best_video['format'].split('- ')[1]
+        for i in range(len(formats)):
+            format_0 = formats[i]['format'].split('- ')[1]
+            format_1 = formats[i-1]['format'].split('- ')[1]
+            if formats[i]['ext'] == 'webm' or formats[i]['ext'] == '3gp':
+                continue
+            else:
+                if format_0 == format_1:
+                    continue
+                else:
+                    info.append({
+                        "format_id": formats[i]["format_id"],
+                        "ext": formats[i]["ext"],
+                        "quality": format_0,
+                        "acodec": formats[i]["acodec"],
+                        "fps": formats[i]["fps"],
+                    })
+
+        best_video = info[-1]
+        best_quality = best_video['quality']
         best_ext = best_video['ext']
+        best_fps = best_video['fps']
         best_format_id = best_video['format_id']
 
     return {
@@ -162,6 +171,7 @@ def get_info_about_youtube_video():
         "title": info_dict["title"],
         "best_format": best_quality,
         "best_ext": best_ext,
+        "best_fps": best_fps,
         "best_format_id": best_format_id,
         "info": info
     }
