@@ -5,7 +5,7 @@ from flask import Blueprint, abort, current_app, render_template, url_for, send_
 from database.datamodel import videos
 
 
-demo_ui = Blueprint('demo_frontend', __name__, template_folder='html')
+demo_ui = Blueprint('demo_frontend', __name__, template_folder='html', static_url_path='/_static')
 
 @demo_ui.get('/')
 def upload_page():
@@ -28,6 +28,6 @@ def player_page(output_name):
         return abort(404)
     return render_template('player.html', output_name=output_name, title=result['description'])
 
-@demo_ui.get('/static/<path>')
-def serve_static_assets(path):
-    return send_from_directory('frontend/static', path)
+@demo_ui.get('/static/<path:filepath>')
+def serve_static_assets(filepath):
+    return send_from_directory('frontend/static', filepath)
