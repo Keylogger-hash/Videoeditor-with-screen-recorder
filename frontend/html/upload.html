@@ -1,9 +1,11 @@
 <!doctype html>
 <meta charset='utf-8' />
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.3/css/bulma.min.css">
 <title>Video sources</title>
 <style></style>
-<script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
+<link rel="stylesheet" href="/static/libs/bulma.min.css">
+<script src="/static/libs/vue.js"></script>
+<script src="/static/libs/popper.min.js"></script>
+<script src="/static/libs/tippy-bundle.umd.js"></script>
 <script src='/static/upload.js'></script>
 <script src='/static/components.js'></script>
 <div class='navbar is-dark'>
@@ -18,29 +20,70 @@
         </div>
         <div class='navbar-end'>
             <a class='navbar-item' href='/edit'>Editor</a>
-            <a class='navbar-item' href='/results'>Processed videos</a>
         </div>
     </div>
 </div>
-<div class='container is-fluid'>
-
-    <table class='table is-fullwidth' id='sourcesList'>
+<div class='container is-fluid' id='sourcesList'>
+    <div class='navbar'>
+        <div class='navbar-item'>
+            <div class='dropdown' v-bind:class='{ "is-active": showTypeFilter }'>
+                <div class='dropdown-trigger'>
+                    <button class='button' v-on:click='showTypeFilter = !showTypeFilter'>Filter videos by type</button>
+                </div>
+                <div class='dropdown-menu'>
+                    <div class='dropdown-content'>
+                        <div class='dropdown-item'>
+                            <label class='checkbox'>
+                                <input type='checkbox' value='sources' v-model='showTypes' />
+                                Sources
+                            </label>
+                        </div>
+                        <div class='dropdown-item'>
+                            <label class='checkbox'>
+                                <input type='checkbox' value='clips' v-model='showTypes' />
+                                Clips
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <table class='table is-fullwidth'>
         <thead>
             <tr>
-                <th>Source name</th>
+                <th>Type</th>
+                <th>Description</th>
                 <th>Status</th>
                 <th>Actions</th>
             </tr>
         </thead>
-        <tr v-for='item in sources'>
+        <!-- sources -->
+        <tr v-for='item in sources' v-if='showTypes.includes("sources")'>
+            <td><span class='tag is-info'>Source</span></td>
             <td>{{ item.title }}</td>
             <td>
                 <span class='tag' v-bind:class='{ "is-danger": item.status == "FAILED", "is-success": item.status == "COMPLETED", "is-warning": item.status == "INACTIVE" }'>{{ item.status }}</span>
             </td>
             <td>
-                <div  class='buttons are-small'>
+                <div  class='buttons has-addons are-small'>
                     <a :href='"/edit?video=" + item.id' class='button'>Edit</a>
                     <button class='button is-danger' v-on:click='deleteVideo(item.id)'>Remove</button>
+                </div>
+            </td>
+        </tr>
+        <!-- clips -->
+        <tr v-for='item in clips' v-if='showTypes.includes("clips")'>
+            <td><span class='tag is-success'>Cut</span></td>
+            <td v-if='item.description == ""'>{{ video.filename }}</td>
+            <td v-else>{{ item.description }}</td>
+            <td>
+                <div class='tag' v-bind:class='{ "is-danger": item.status == "FAILED", "is-success": item.status == "COMPLETED", "is-warning": item.status == "INACTIVE" }'>{{ item.status }}</div>
+            </td>
+            <td>
+                <div class='buttons has-addons are-small'>
+                    <button class='button' v-on:click='showPreview(item.filename)'>View</button>
+                    <button class='button is-danger' v-on:click='deleteClip(item.filename)'>Remove</button>
                 </div>
             </td>
         </tr>
@@ -137,6 +180,24 @@
     </bulma-modal>
 </script>
 
+<script type='text/template' id='preview-modal-template'>
+    <bulma-modal v-bind:is-shown='name != null' v-on:close='$emit("close")'>
+        <div class='box content'>
+            <h3>Preview</h3>
+            <video style='width: 100%' v-bind:src='directLink == null ? "" : directLink' controls></video>
+            <div class='field'>
+                <div class='control'>
+                    <label>Link to player</label>
+                    <input ref='shareLinkInput' type='text' class='input' v-on:click='copyShareLink' v-bind:value='shareLink' readonly />
+                </div>
+            </div>
+            <div class='buttons is-centered'>
+                <button class='button' v-on:click='$emit("close")'>Close</button>
+            </div>
+        </div>
+    </bulma-modal>
+</script>
+
 <div id='modals'>
     <upload-modal
         upload-url='/api/upload'
@@ -150,4 +211,8 @@
         v-on:download-canceled='downloadCanceled'
         v-on:close='ytDownloadDialog = false'
     ></yt-download-modal>
+    <preview-modal
+        v-bind:name='previewClip'
+        v-on:close='previewClip = null'
+    ></preview-modal>
 </div>

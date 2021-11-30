@@ -2,10 +2,11 @@
 <meta charset='utf-8' />
 <head>
 <title>Editor</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/all.min.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.3/css/bulma.min.css">
-<script src="https://unpkg.com/@popperjs/core@2/dist/umd/popper.min.js"></script>
-<script src="https://unpkg.com/tippy.js@6/dist/tippy-bundle.umd.js"></script>
+<link rel="stylesheet" href="/static/libs/fontawesome.min.css">
+<link rel="stylesheet" href="/static/libs/bulma.min.css">
+<script src="/static/libs/popper.min.js"></script>
+<script src="/static/libs/tippy-bundle.umd.js"></script>
+<script src="/static/libs/vue.js"></script>
 <style>
 html {
     overflow-y: auto;
@@ -57,7 +58,6 @@ div {
     margin: -3px 5px;
 }
 </style>
-<script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
 <script src='/static/components.js'></script>
 <script src='/static/timeline.js'></script>
 <script src='/static/editor.js'></script>
@@ -109,7 +109,7 @@ div {
         </div>
         <div v-show='stage == "process"'>
             <div class='notification is-danger' v-if='error != null'>Error during processing: {{ error }}</div>
-            <progress class='progress is-primary' v-bind:class='{"is-danger": error != null}' min='0' max='100' v-bind:value='progress'>{{ progress }}%</progress>
+            <progress class='progress is-primary' v-bind:class='{"is-danger": error != null}' min='0' max='100' v-bind:value='progressRound'>{{ progressRound }}%</progress>
             <button class='button is-danger' v-on:click='cancelProcessing'>Cancel</button>
         </div>
         <div v-show='stage == "done"'>
@@ -134,8 +134,7 @@ div {
             <div class='navbar is-dark'>
                 <div class='navbar-menu is-active'>
                     <div class='navbar-start'>
-                        <a class='navbar-item' href='/'>Back to sources list</a>
-                        <a class='navbar-item' href='/results'>To processed videos</a>
+                        <a class='navbar-item' href='/'>&larr; Back to sources</a>
                     </div>
                 </div>
             </div>
@@ -163,7 +162,7 @@ div {
             </div>
             <div class='controls-area has-background-light'>
                 <div class='controls-group'>
-                    <div class='field has-addons caption-under-icon px-2'>
+                    <div class='field has-addons px-2'>
                         <div class='control'>
                             <button class='button is-small is-dark' title='To selection start' v-on:click='jumpToStart'>
                                 <i class="fas fa-step-backward"></i>
@@ -171,26 +170,24 @@ div {
                         </div>
                         <div class='control'>
                             <button class='button is-small is-dark' title='Back 10m' v-on:click='jump(-600)'>
+                                <i class='fas fa-angle-double-left' style='margin-right: -0.2ex'></i>
                                 <i class='fas fa-angle-double-left'></i>
-                                <div class='caption'>10m</small>
                             </button>
                         </div>
                         <div class='control'>
                             <button class='button is-small is-dark' title='Back 1m' v-on:click='jump(-60)'>
-                                <i class='fas fa-angle-double-left'></i>
-                                <div class='caption'>1m</small>
+                                <i class='fas fa-angle-double-left' style='margin-right: -0.2ex'></i>
+                                <i class='fas fa-angle-left'></i>
                             </button>
                         </div>
                         <div class='control'>
                             <button class='button is-small is-dark' title='Back 10s' v-on:click='jump(-10)'>
                                 <i class='fas fa-angle-double-left'></i>
-                                <div class='caption'>10s</small>
                             </button>
                         </div>
                         <div class='control'>
                             <button class='button is-small is-dark' title='Back 1s' v-on:click='jump(-1)'>
-                                <i class='fas fa-angle-double-left'></i>
-                                <div class='caption'>1s</small>
+                                <i class='fas fa-angle-left'></i>
                             </button>
                         </div>
                         <div class='control'>
@@ -201,26 +198,24 @@ div {
                         </div>
                         <div class='control'>
                             <button class='button is-small is-dark' title='Forward 1s' v-on:click='jump(1)'>
-                                <i class='fas fa-angle-double-right'></i>
-                                <div class='caption'>1s</small>
+                                <i class='fas fa-angle-right'></i>
                             </button>
                         </div>
                         <div class='control'>
                             <button class='button is-small is-dark' title='Forward 10s' v-on:click='jump(10)'>
                                 <i class='fas fa-angle-double-right'></i>
-                                <div class='caption'>10s</small>
                             </button>
                         </div>
                         <div class='control'>
                             <button class='button is-small is-dark' title='Forward 1m' v-on:click='jump(60)'>
-                                <i class='fas fa-angle-double-right'></i>
-                                <div class='caption'>1m</small>
+                                <i class='fas fa-angle-right'></i>
+                                <i class='fas fa-angle-double-right' style='margin-left: -0.2ex'></i>
                             </button>
                         </div>
                         <div class='control'>
                             <button class='button is-small is-dark' title='Forward 10m' v-on:click='jump(600)'>
                                 <i class='fas fa-angle-double-right'></i>
-                                <div class='caption'>10m</small>
+                                <i class='fas fa-angle-double-right' style='margin-left: -0.2ex'></i>
                             </button>
                         </div>
                         <div class='control'>
