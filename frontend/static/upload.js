@@ -40,10 +40,41 @@ function trackDownloading(videoId){
     })
 }
 
+Vue.component('preview-modal', {
+    template: '#preview-modal-template',
+    props: ['name'],
+    data: function(){
+        return {}
+    },
+    computed: {
+        directLink: function(){
+            return '/files/cuts/' + this.name;
+        },
+        shareLink: function(){
+            return location.protocol + '//' + location.host + '/play/' + this.name;
+        }
+    },
+    methods: {
+        copyShareLink: function(e){
+            var linkInput = e.target;
+            linkInput.select();
+            document.execCommand('copy');
+        }
+    },
+    mounted: function(){
+        tippy(this.$refs.shareLinkInput, { trigger: 'click', content: 'Copied to clipboard' });
+    }
+})
+
 function main(){
     sourcesList = new Vue({
         el: '#sourcesList',
-        data: { sources: [] },
+        data: {
+            showTypeFilter: false,
+            showTypes: ['sources', 'clips'],
+            sources: [],
+            clips: []
+        },
         methods: {
             fetchSources: function(){
                 fetch('/api/downloads/')
@@ -54,7 +85,20 @@ function main(){
                         return;
                     }
                     this.sources = downloads;
-                })
+                });
+                fetch('/api/cuts/')
+                .then(r => r.json())
+                .then((response) => {
+                    if(!response.success){
+                        console.warn('Failed to fetch videos list');
+                        return;
+                    }
+                    this.clips = response.cuts;
+                });
+            },
+            showPreview: function(id){
+                console.log(id);
+                modals.previewClip = id;
             },
             deleteVideo: function(id){
                 fetch('/api/downloads/' + id + '/cancel', { method: 'delete' })
@@ -62,6 +106,9 @@ function main(){
                 .then(() => {
                     this.fetchSources();
                 })
+            },
+            deleteClip: function(id){
+
             }
         }
     });
@@ -71,7 +118,8 @@ function main(){
         data: {
             uploadDialog: false,
             ytDownloadDialog: false,
-            ytDownloadFormatsDialog: false
+            ytDownloadFormatsDialog: false,
+            previewClip: null
         },
         methods: {
             submitUpload: function(file){

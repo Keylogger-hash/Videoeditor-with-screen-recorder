@@ -15,10 +15,6 @@ def upload_page():
 def editor_page():
     return send_from_directory('frontend/html', 'editor.html')
 
-@demo_ui.get('/results')
-def results_page():
-    return send_from_directory('frontend/html', 'results.html')
-
 @demo_ui.get('/play/<output_name>')
 def player_page(output_name):
     database_url = current_app.config.get('DATABASE')
