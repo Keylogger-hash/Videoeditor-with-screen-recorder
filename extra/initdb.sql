@@ -17,7 +17,8 @@ CREATE TABLE public.videos (
     status integer NOT NULL,
     progress integer,
     task_begin timestamp without time zone,
-    task_end timestamp without time zone
+    task_end timestamp without time zone,
+    description TEXT DEFAULT '' NOT NULL
 );
 
 ALTER TABLE ONLY public.download_videos
