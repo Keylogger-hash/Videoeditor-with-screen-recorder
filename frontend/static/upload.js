@@ -108,7 +108,17 @@ function main(){
                 })
             },
             deleteClip: function(id){
-
+                fetch('/api/cuts/' + id, {
+                    method: 'DELETE'
+                })
+                .then(r => r.json())
+                .then((response) => {
+                    if(!response.success){
+                        console.warn('Failed to delete video ' + id);
+                        return;
+                    }
+                    this.fetchVideos();
+                })
             }
         }
     });
