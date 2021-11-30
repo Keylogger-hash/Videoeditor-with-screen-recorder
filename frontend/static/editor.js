@@ -250,6 +250,9 @@ Vue.component('video-cut-form', {
         endf: function(){
             return formatSeconds(this.end);
         },
+        progressRound: function(){
+            return this.progress == null ? 0 : this.progress.toFixed(0);
+        }
     },
     methods: {
         reset: function(){
@@ -288,8 +291,12 @@ Vue.component('video-cut-form', {
             .then((data) => {
                 if(data.success){
                     if((data.result.status == 'QUEUED') || (data.result.status == 'WORKING') || (data.result.status == 'INACTIVE')){
-                        this.progress = data.result.progress;
-                        setTimeout(this.watchProcessing.bind(this), 2000);
+                        if(data.result.progress > this.progress){
+                            this.progress = data.result.progress;
+                        } else {
+                            this.progress += (1 / (1 + this.progress));
+                        }
+                        setTimeout(this.watchProcessing.bind(this), 1000);
                     } else if(data.result.status == 'FAILED') {
                         this.error = data.error;
                     } else {

@@ -12,7 +12,7 @@ from download_service.common import TaskStatus
 from database.datamodel import download_videos
 
 
-app = Flask(__name__)
+app = Flask(__name__, static_url_path='/_static')
 
 @app.route("/api/upload", methods=['POST', 'PUT'])
 def upload_video():
@@ -50,6 +50,7 @@ def upload_video():
         "success": False,
         "error": "No file uploaded"
     }
+
 app.register_blueprint(demo_ui.demo_ui, url_prefix='/')
 app.register_blueprint(cutvideo_api.api, url_prefix='/api')
 app.register_blueprint(downloadvideo_api.api, url_prefix='/api')
