@@ -117,7 +117,7 @@ function main(){
                         console.warn('Failed to delete video ' + id);
                         return;
                     }
-                    this.fetchVideos();
+                    this.fetchSources();
                 })
             }
         }
