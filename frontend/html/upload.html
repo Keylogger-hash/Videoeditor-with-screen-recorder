@@ -75,7 +75,7 @@
         <!-- clips -->
         <tr v-for='item in clips' v-if='showTypes.includes("clips")'>
             <td><span class='tag is-success'>Cut</span></td>
-            <td v-if='item.description == ""'>{{ video.filename }}</td>
+            <td v-if='item.description == ""'>{{ item.filename }}</td>
             <td v-else>{{ item.description }}</td>
             <td>
                 <div class='tag' v-bind:class='{ "is-danger": item.status == "FAILED", "is-success": item.status == "COMPLETED", "is-warning": item.status == "INACTIVE" }'>{{ item.status }}</div>
