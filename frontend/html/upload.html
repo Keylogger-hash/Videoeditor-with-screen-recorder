@@ -150,23 +150,21 @@
                 </div>
             </div>
             <div v-show='stage == 2'>
-                <div class='menu'>
-                    <p class='menu-label'>Available formats</p>
-                    <ul class='menu-list'>
-                        <select class="form-control"  @change="changeFormatAvailable($event)">
-                            <option :value="availableFormats.best_format_id" selected>
-                                {{ availableFormats.best_format }} [{{ availableFormats.best_ext }}]
-                            </option>
-                            <option v-for="format in availableFormats.info" :value="format.format_id">
-                                    {{ format.quality }} [{{ format.ext }}]
+                <h3>Available formats</h3>
+                <div class='field'>
+                    <div class='control is-expanded'>
+                    <div class='select is-fullwidth'>
+                        <select v-model='selectedFormat'>
+                            <option v-for="format in availableFormats" :value="format.format_id" :key='format.format_id'>
+                                    {{ format.width }}&times;{{ format.height }} ({{ format.fps }} FPS)
                             </option>
                         </select>
-                        <p><span>Selected format: {{formatAvailable}}</span></p>
-                    </ul>
+                    </div>
+                    </div>
                 </div>
                 <div class='buttons is-right'>
                     <button class='button is-text' type='button' v-on:click='$emit("close")'>Cancel</button>
-                    <a class='button' type='button' v-on:click='submitDownload(formatAvailable)'>Submit</a>
+                    <a class='button' type='button' v-on:click='submitDownload()'>Submit</a>
                 </div>
             </div>
             <div v-show='stage == 3'>
