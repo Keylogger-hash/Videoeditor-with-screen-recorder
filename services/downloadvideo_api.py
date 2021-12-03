@@ -142,38 +142,25 @@ def get_info_about_youtube_video():
         info_dict = ydl.extract_info(link, download=False)
         formats = info_dict['formats']
         info = []
-        for i in range(len(formats)):
-            format_0 = formats[i]['format'].split('- ')[1]
-            format_1 = formats[i-1]['format'].split('- ')[1]
-            if formats[i]['ext'] == 'webm' or formats[i]['ext'] == '3gp':
-                continue
-            else:
-                if format_0 == format_1:
-                    continue
-                else:
-                    info.append({
-                        "format_id": formats[i]["format_id"],
-                        "ext": formats[i]["ext"],
-                        "quality": format_0,
-                        "acodec": formats[i]["acodec"],
-                        "fps": formats[i]["fps"],
-                    })
-
-        best_video = info[-1]
-        best_quality = best_video['quality']
-        best_ext = best_video['ext']
-        best_fps = best_video['fps']
-        best_format_id = best_video['format_id']
+        selected_formats = [
+            dict(
+                format_id=item['format_id'],
+                width=item['width'],
+                height=item['height'],
+                ext=item['ext'],
+                q=item['quality'],
+                fps=item['fps']
+            )
+            for item in formats
+            if (item['ext'] == 'mp4') and (item['acodec'] == 'none')
+        ]
+        selected_formats.sort(key=lambda x: x['q'], reverse=True)
 
     return {
         "success": True,
         "error": None,
         "title": info_dict["title"],
-        "best_format": best_quality,
-        "best_ext": best_ext,
-        "best_fps": best_fps,
-        "best_format_id": best_format_id,
-        "info": info
+        "formats": selected_formats
     }
 
 
@@ -244,7 +231,10 @@ def start_downloading():
             if variant['format_id'] == format_id:
                 format_ext = variant['ext']
                 r = requests.get(variant['url'], stream=True)
-                filesize = int(r.headers['Content-Length'])
+                if not 'Content-Length' in r.headers:
+                    filesize = video_info['duration'] * variant.get('vbr', 300) * 128
+                else:
+                    filesize = int(r.headers['Content-Length'])
                 print(filesize)
                 break
         quality = "{} - {}".format(format_ext, format_id)

@@ -84,12 +84,12 @@ Vue.component('yt-download-modal', {
             mainDialog: this.isShown,
             stage: 1,
             availableFormats: [],
+            selectedFormat: null,
             downloadLink: null,
             progress: 0,
             downloadFormat: null,
             videoId: null,
             errorMessage: null,
-            formatAvailable: null
         }
     },
     watch: {
@@ -110,21 +110,18 @@ Vue.component('yt-download-modal', {
                     return;
                 }
                 this.stage = 2;
-                this.availableFormats = response;
-                this.formatAvailable = this.availableFormats['best_format_id']
+                this.availableFormats = response.formats;
+                this.selectedFormat = response.formats[0].format_id;
             })
             .catch((error) => {
                 this.errorMessage = 'Failed to fetch variants: ' + error.toString();
             });
         },
-        changeFormatAvailable: function(event){
-            this.formatAvailable=event.target.options[event.target.options.selectedIndex].value
-        },
-        submitDownload: function(formatId){
+        submitDownload: function(){
             fetch('/api/downloads/', {
                 method: 'post',
                 headers: { 'content-type': 'application/json' },
-                body: JSON.stringify({ link: this.downloadLink, format_id: formatId })
+                body: JSON.stringify({ link: this.downloadLink, format_id: this.selectedFormat })
             })
             .then(r => r.json())
             .then((response) => {
