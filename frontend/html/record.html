@@ -1,0 +1,28 @@
+<!doctype html>
+<meta charset='utf-8' />
+<title>Video sources</title>
+<style></style>
+<link rel="stylesheet" href="/static/libs/bulma.min.css">
+<script src="/static/libs/vue.js"></script>
+<script src="/static/libs/popper.min.js"></script>
+<script src="/static/libs/tippy-bundle.umd.js"></script>
+<script src='/static/upload.js'></script>
+<script src='/static/components.js'></script>
+
+<div class='navbar is-dark'>
+</div>
+<div class="navbar">
+    <button class="button">Display</button>
+    <button class="button">Web-camera</button>
+</div>
+<div class="navbar">
+    <button class="button is-danger" id="start">Start record</button>
+    <button class="button is-danger" id="stop">Stop record</button>
+</div>
+<div>
+    <a href="#" id="download">Download</a>
+    <video id=#main-player" controls>
+        <source src=""></source>
+    </video>
+</div>
+<script src="/static/record.js"></script>

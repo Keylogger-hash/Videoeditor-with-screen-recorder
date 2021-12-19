@@ -11,6 +11,11 @@ demo_ui = Blueprint('demo_frontend', __name__, template_folder='html', static_ur
 def upload_page():
     return send_from_directory('frontend/html', 'upload.html')
 
+
+@demo_ui.get('/record')
+def record_page():
+    return send_from_directory('frontend/html', 'record.html')
+
 @demo_ui.get('/edit')
 def editor_page():
     return send_from_directory('frontend/html', 'editor.html')
