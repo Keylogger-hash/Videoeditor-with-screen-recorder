@@ -51,6 +51,8 @@ def upload_video():
         "error": "No file uploaded"
     }
 
+
+
 app.register_blueprint(demo_ui.demo_ui, url_prefix='/')
 app.register_blueprint(cutvideo_api.api, url_prefix='/api')
 app.register_blueprint(downloadvideo_api.api, url_prefix='/api')

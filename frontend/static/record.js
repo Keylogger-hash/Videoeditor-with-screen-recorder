@@ -1,71 +1,14 @@
-function main() {
-    model = new Vue({
-        el: '#app',
-        data: {
-            canRecord: true,
-            isRecord: false,
-            isScreen: true,
-            options: {
-                audioBitsPerSecond: 128000,
-                videoBitsPerSecond: 2500000,
-                mimeType: 'video/webm'
-            },
-            displayMediaOptions: {
-                video: {
-                    cursor: "always"
-                },
-                audio: {
-                    echoCancellation: true,
-                    noiseSuppression: true,
-                    sampleRate: 44100
-                },
-            },
-            mediaRecorder: {},
-            stream: {},
-            recordedChunks: [],
-            file: null,
-            fileReady: false,
-            url: 'http://localhost:5000',
-            bytes_processed: 0,
-        },
-        watch: {},
-        computed: {},
-        methods: {
-            async uploadFileData() {
+const videoElement = document.getElementById('#main-player')
+let recordElement = document.getElementById("#record")
+let displayElement = document.getElementById("#display")
+let webcameraElement = document.getElementById("#webcamera")
+let isScreen = true;
+//let stopElement = document.getElementById("stop")
+let mediaRecorder
+let recordChunks = []
+var startTime = null
 
-            },
-            setFile(){
-
-            },
-            stopStream: function(){
-
-            },
-            download: function(){
-
-            },
-            
-            getStream: async function(){
-
-            },
-            handleDataAvailable: function(event) {
-                if (len(event.data) > 0) {
-                    this.recordedChunks.push(event.data)
-                } else {
-                    // .... //
-                }
-            },
-            
-        },
-    })
-}
-
-
-
-let videoElement = document.getElementById('main-player')
-let startElement = document.getElementById("start")
-let stopElement = document.getElementById("stop")
-
-var options = {mimeType: 'video/webm; codecs=vp9'};
+var options = {mimeType: 'video/webm; codecs=vp8'};
 
 
 var displayMediaOptions = {
@@ -75,48 +18,104 @@ var displayMediaOptions = {
     audio: true
 }
 
-startElement.addEventListener('click', function(event){
-    startCapture()
-    console.log('Recording was started')
+var webcameraMediaOptions = {
+    audio: true,
+    video: { width: 240, height: 360 }
+      
+}
+
+displayElement.addEventListener('click', function(event){
+    isScreen = true
+    console.log(isScreen)
 })
 
-stopElement.addEventListener('click', function(event){
-    stopCapture()
-
+webcameraElement.addEventListener('click', function(event){
+    isScreen = false
+    console.log(isScreen)
 })
+
+
+recordElement.addEventListener('click', function(event){
+    toggleRecording()
+}, false)
+
+
+function toggleRecording() {
+    if (recordElement.textContent === 'Record') {
+        startCapture()
+    } else {
+        stopCapture()
+        recordElement.textContent = 'Record'
+    }
+} 
+
+
+function handleDataAvailable(event) {
+    if (event && event.data) {
+        recordChunks.push(event.data)
+    }
+} 
+
+function download(fixedBlob, filename){
+    var url = URL.createObjectURL(fixedBlob)
+    var a = document.getElementById('download')
+    a.href = url
+    var date = new Date()
+    a.download = filename
+    //a.click()
+}
+function upload_data(fixedBlob, filename) {
+    fd = new FormData()
+    fd.append("upload", fixedBlob, filename)
+    var request = new XMLHttpRequest()
+    request.open('POST','http://localhost:4040/api/upload')
+    request.send(fd)
+}
+
+function handleStop(event) {
+    console.log('Recording stopped...', event)
+    const superBuffer = new Blob(recordChunks, {type:'video/webm'})
+    var duration = Date.now()-startTime
+    console.log(duration)
+    ysFixWebmDuration(superBuffer, duration, function(fixedBlob){
+        var date = Date()
+        filename = `${date}.webm`
+        download(fixedBlob, filename)
+        upload_data(fixedBlob, filename)
+    })
+
+}
 
 
 
 async function startCapture(displayMediaOptions) {
-
-      
+    let stream = null
     try {
-        videoElement.srcObject = await navigator.mediaDevices.getDisplayMedia(displayMediaOptions)
-        let recorder = new MediaRecorder(videoElement.srcObject, displayMediaOptions)
+        if (isScreen) {
+            stream = await navigator.mediaDevices.getDisplayMedia(displayMediaOptions);
+        } else {
+            stream = await navigator.mediaDevices.getUserMedia();
+        }
+        recordElement.textContent = "Stop recording"
+        videoElement.srcObject = stream
+        mediaRecorder = new MediaRecorder(stream, displayMediaOptions)
         var chunks = []
-        recorder.ondataavailable = handleDataAvailable
-        handleDataAvailable = e => chunks.push(videoElement.srcObject.getTracks())
-        var blob = new Blob(chunks, {'type':'video/mp4'})
-        var url = URL.createObjectURL(blob)
-    var a = document.getElementById('download')
-    a.href = url
-    a.download = 'test.mp4'
-    a.
-    a.click()
-    window.URL.revokeObjectURL(url);
+        startTime = Date.now()
+        console.log(startTime)
+        mediaRecorder.onstop = handleStop
+        mediaRecorder.ondataavailable = handleDataAvailable
+        mediaRecorder.start(100)
     } catch(err) {   
         console.error("Error: "+err)
     }
 }
 
+
+
+
 async function stopCapture(displayMediaOptions) {
     let tracks = videoElement.srcObject.getTracks()
-    
-
-    tracks.forEach(track => {
-        track.stop()
-    });
-    videoElement.srcObject = null;
-    // return navigator.mediaDevices.getDisplayMedia(displayMediaOptions)
-    // .catch(err => {console.error("Error: "+err); return null})
+    tracks.forEach(track => track.stop());
+    mediaRecorder.stop()
+    videoElement.srcObject = null
 }
