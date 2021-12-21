@@ -8,7 +8,7 @@ let mediaRecorder
 let recordChunks = []
 var startTime = null
 
-var options = {mimeType: 'video/webm; codecs=vp8'};
+
 
 
 var displayMediaOptions = {
@@ -20,8 +20,9 @@ var displayMediaOptions = {
 
 var webcameraMediaOptions = {
     audio: true,
-    video: { width: 240, height: 360 }
-      
+    video: { 
+        width: {min: 1024, ideal:1280, max:1920}, 
+        height: {min:576, ideal: 720, max: 1080} },
 }
 
 displayElement.addEventListener('click', function(event){
@@ -90,15 +91,40 @@ function handleStop(event) {
 
 async function startCapture(displayMediaOptions) {
     let stream = null
+    recordChunks = []
+    let options = {mimeType: 'video/webm; codecs=vp9'};
     try {
         if (isScreen) {
             stream = await navigator.mediaDevices.getDisplayMedia(displayMediaOptions);
         } else {
-            stream = await navigator.mediaDevices.getUserMedia();
+            stream = await navigator.mediaDevices.getUserMedia(webcameraMediaOptions);
+        }   
+        
+        try {
+            mediaRecorder = new MediaRecorder(stream, options);
+        } catch (e0) {
+            console.log('Unable to create MediaRecorder with options Object: ', e0);
+            try {
+                options = {mimeType: 'video/webm; codecs=vp9'};
+                mediaRecorder = new MediaRecorder(stream, options);
+            } catch (e1) {
+                console.log('Unable to create MediaRecorder with options Object: ', e1);
+                try {
+                    options = {mimeType: 'video/webm; codecs=vp8'};; // Chrome 47
+                    mediaRecorder = new MediaRecorder(stream, options);
+                } catch (e2) {
+                    alert('MediaRecorder is not supported by this browser.\n\n' +
+                    'Try Firefox 29 or later, or Chrome 47 or later, ' +
+                    'with Enable experimental Web Platform features enabled from chrome://flags.');
+                    console.error('Exception while creating MediaRecorder:', e2);
+                    return;
+              }
+            }
         }
+        console.log(options)
+        //mediaRecorder = new MediaRecorder(stream, displayMediaOptions)
         recordElement.textContent = "Stop recording"
         videoElement.srcObject = stream
-        mediaRecorder = new MediaRecorder(stream, displayMediaOptions)
         var chunks = []
         startTime = Date.now()
         console.log(startTime)
