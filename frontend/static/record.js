@@ -2,7 +2,10 @@ const videoElement = document.getElementById('#main-player')
 let recordElement = document.getElementById("#record")
 let displayElement = document.getElementById("#display")
 let webcameraElement = document.getElementById("#webcamera")
-let isScreen = true;
+let microphoneElement = document.getElementById("#microphone")
+
+let isScreen = 0;
+let enumChoose = (0,1,2)
 //let stopElement = document.getElementById("stop")
 let mediaRecorder
 let recordChunks = []
@@ -25,16 +28,25 @@ var webcameraMediaOptions = {
         height: {min:576, ideal: 720, max: 1080} },
 }
 
+var microphoneMediaOptions = {
+    audio: true,
+    video: false
+}
+
 displayElement.addEventListener('click', function(event){
-    isScreen = true
+    isScreen = 0
     console.log(isScreen)
 })
 
 webcameraElement.addEventListener('click', function(event){
-    isScreen = false
+    isScreen = 1
     console.log(isScreen)
 })
 
+microphoneElement.addEventListener('click', function(event){
+    isScreen = 2
+    console.log(isScreen)
+})
 
 recordElement.addEventListener('click', function(event){
     toggleRecording()
@@ -69,7 +81,7 @@ function upload_data(fixedBlob, filename) {
     fd = new FormData()
     fd.append("upload", fixedBlob, filename)
     var request = new XMLHttpRequest()
-    request.open('POST','http://localhost:4040/api/upload')
+    request.open('POST','/api/upload')
     request.send(fd)
 }
 
@@ -94,33 +106,60 @@ async function startCapture(displayMediaOptions) {
     recordChunks = []
     let options = {mimeType: 'video/webm; codecs=vp9'};
     try {
-        if (isScreen) {
+        if (isScreen == 0) {
             stream = await navigator.mediaDevices.getDisplayMedia(displayMediaOptions);
-        } else {
+        } if (isScreen == 1) {
             stream = await navigator.mediaDevices.getUserMedia(webcameraMediaOptions);
-        }   
-        
-        try {
-            mediaRecorder = new MediaRecorder(stream, options);
-        } catch (e0) {
-            console.log('Unable to create MediaRecorder with options Object: ', e0);
+        }   if (isScreen == 2) {
+            stream = await navigator.mediaDevices.getUserMedia(microphoneMediaOptions);
+        }
+        if (isScreen == 0 || isScreen == 1){
             try {
-                options = {mimeType: 'video/webm; codecs=vp9'};
                 mediaRecorder = new MediaRecorder(stream, options);
-            } catch (e1) {
-                console.log('Unable to create MediaRecorder with options Object: ', e1);
+            } catch (e0) {
+                console.log('Unable to create MediaRecorder with options Object: ', e0);
                 try {
-                    options = {mimeType: 'video/webm; codecs=vp8'};; // Chrome 47
+                    options = {mimeType: 'video/webm; codecs=vp9'};
                     mediaRecorder = new MediaRecorder(stream, options);
-                } catch (e2) {
-                    alert('MediaRecorder is not supported by this browser.\n\n' +
-                    'Try Firefox 29 or later, or Chrome 47 or later, ' +
-                    'with Enable experimental Web Platform features enabled from chrome://flags.');
-                    console.error('Exception while creating MediaRecorder:', e2);
-                    return;
-              }
+                } catch (e1) {
+                    console.log('Unable to create MediaRecorder with options Object: ', e1);
+                    try {
+                        options = {mimeType: 'video/webm; codecs=vp8'};; // Chrome 47
+                        mediaRecorder = new MediaRecorder(stream, options);
+                    } catch (e2) {
+                        alert('MediaRecorder is not supported by this browser.\n\n' +
+                        'Try Firefox 29 or later, or Chrome 47 or later, ' +
+                        'with Enable experimental Web Platform features enabled from chrome://flags.');
+                        console.error('Exception while creating MediaRecorder:', e2);
+                        return;
+                  }
+                }
+            }
+        } if (isScreen == 2) {
+            options = {mimeType:'audio/webm'}
+            try {
+                mediaRecorder = new MediaRecorder(stream, options);
+            } catch (e0) {
+                console.log('Unable to create MediaRecorder with options Object: ', e0);
+                try {
+                    options = {mimeType: 'video/webm; codecs=vp9'};
+                    mediaRecorder = new MediaRecorder(stream, options);
+                } catch (e1) {
+                    console.log('Unable to create MediaRecorder with options Object: ', e1);
+                    try {
+                        options = {mimeType: 'video/webm; codecs=vp8'};; // Chrome 47
+                        mediaRecorder = new MediaRecorder(stream, options);
+                    } catch (e2) {
+                        alert('MediaRecorder is not supported by this browser.\n\n' +
+                        'Try Firefox 29 or later, or Chrome 47 or later, ' +
+                        'with Enable experimental Web Platform features enabled from chrome://flags.');
+                        console.error('Exception while creating MediaRecorder:', e2);
+                        return;
+                  }
+                }
             }
         }
+        
         console.log(options)
         //mediaRecorder = new MediaRecorder(stream, displayMediaOptions)
         recordElement.textContent = "Stop recording"
