@@ -18,7 +18,11 @@ var displayMediaOptions = {
     video: {
         cursor: "always"
     },
-    audio: true
+    audio :{
+        echoCancellation: true,
+        noiseSuppression: true,
+        sampleRate: 44100
+    }
 }
 
 var webcameraMediaOptions = {
@@ -29,8 +33,7 @@ var webcameraMediaOptions = {
 }
 
 var microphoneMediaOptions = {
-    audio: true,
-    video: false
+    audio: true
 }
 
 displayElement.addEventListener('click', function(event){
@@ -79,7 +82,12 @@ function download(fixedBlob, filename){
 }
 function upload_data(fixedBlob, filename) {
     fd = new FormData()
-    fd.append("upload", fixedBlob, filename)
+    if (isScreen === 0  || isScreen === 1){
+        fd.append("video", fixedBlob, filename)
+    } 
+    if (isScreen === 2 ){
+        fd.append("audio", fixedBlob, filename)
+    }
     var request = new XMLHttpRequest()
     request.open('POST','/api/upload')
     request.send(fd)
@@ -136,18 +144,18 @@ async function startCapture(displayMediaOptions) {
                 }
             }
         } if (isScreen == 2) {
-            options = {mimeType:'audio/webm'}
+            options = {mimeType:'video/webm'}
             try {
                 mediaRecorder = new MediaRecorder(stream, options);
             } catch (e0) {
                 console.log('Unable to create MediaRecorder with options Object: ', e0);
                 try {
-                    options = {mimeType: 'video/webm; codecs=vp9'};
+                    options = {mimeType: 'video/webm,codecs=vp9'};
                     mediaRecorder = new MediaRecorder(stream, options);
                 } catch (e1) {
                     console.log('Unable to create MediaRecorder with options Object: ', e1);
                     try {
-                        options = {mimeType: 'video/webm; codecs=vp8'};; // Chrome 47
+                        options = {mimeType: 'video/webm,codecs=vp8'};; // Chrome 47
                         mediaRecorder = new MediaRecorder(stream, options);
                     } catch (e2) {
                         alert('MediaRecorder is not supported by this browser.\n\n' +

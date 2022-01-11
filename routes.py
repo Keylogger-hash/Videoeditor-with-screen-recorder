@@ -56,6 +56,7 @@ def upload_video():
 app.register_blueprint(demo_ui.demo_ui, url_prefix='/')
 app.register_blueprint(cutvideo_api.api, url_prefix='/api')
 app.register_blueprint(downloadvideo_api.api, url_prefix='/api')
+app.register_blueprint()
 app.config.from_object('settings')
 
 # NOTE: serve files, do not use in production
