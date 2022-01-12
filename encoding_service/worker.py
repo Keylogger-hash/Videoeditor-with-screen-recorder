@@ -116,7 +116,7 @@ class DatabaseProcessingWorker(ProcessingWorker):
 
     def on_progress(self, subject: str, percent: float):
         self.dbe.execute(
-            videos.update().where(videos.c.output_filename == subject).values(progress=int(percent))
+            download_videos.update().where(download_videos.c.output_filename == subject).values(progress=int(percent))
         )
 
 class EncodeServiceListener(ZMQServer):
