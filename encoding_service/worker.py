@@ -12,7 +12,7 @@ from sqlalchemy import create_engine
 from processing_service.executor import FFmpegThreadExecutor
 from processing_service.common import IPCType, TaskStatus
 from shared.zmqserver import ZMQServer
-from database.datamodel import videos
+from database.datamodel import download_videos
 from settings import DOWNLOADS_LOCATION as UPLOADS_LOCATION
 
 WORKER_IPC_POLL = 10
@@ -111,7 +111,7 @@ class DatabaseProcessingWorker(ProcessingWorker):
         elif status in (TaskStatus.COMPLETED, TaskStatus.FAILED):
             extra_changes['task_end'] = datetime.datetime.now()
         self.dbe.execute(
-            videos.update().where(videos.c.output_filename == subject).values(status=status.value, ** extra_changes)
+            download_videos.update().where(download_videos.c.output_filename == subject).values(status=status.value, ** extra_changes)
         )
 
     def on_progress(self, subject: str, percent: float):

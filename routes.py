@@ -5,7 +5,7 @@ from base64 import b32encode
 from functools import partial
 from flask import Flask, request, current_app, send_from_directory
 from sqlalchemy import create_engine
-from services import cutvideo_api, downloadvideo_api
+from services import cutvideo_api, downloadvideo_api, encodingvideo_api
 from frontend import demo_ui
 from settings import DOWNLOADS_LOCATION, CUTS_LOCATION
 from download_service.common import TaskStatus
@@ -56,7 +56,7 @@ def upload_video():
 app.register_blueprint(demo_ui.demo_ui, url_prefix='/')
 app.register_blueprint(cutvideo_api.api, url_prefix='/api')
 app.register_blueprint(downloadvideo_api.api, url_prefix='/api')
-app.register_blueprint()
+app.register_blueprint(encodingvideo_api.api, url_prefix='/api')
 app.config.from_object('settings')
 
 # NOTE: serve files, do not use in production

@@ -89,7 +89,7 @@ function upload_data(fixedBlob, filename) {
         fd.append("audio", fixedBlob, filename)
     }
     var request = new XMLHttpRequest()
-    request.open('POST','/api/record')
+    request.open('POST','/api/record/')
     request.send(fd)
 }
 

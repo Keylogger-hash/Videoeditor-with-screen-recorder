@@ -2,12 +2,13 @@ import zmq
 import os
 import json
 import zmq
+import typing
 from sqlalchemy import create_engine
 from sqlalchemy.sql import select
 from flask import Blueprint, current_app, request
 from database.datamodel import videos, download_videos
 import uuid
-from datetime import datetime
+import datetime
 from base64 import b32encode
 from settings import DOWNLOADS_LOCATION
 from encoding_service.common import TaskStatus
@@ -84,36 +85,51 @@ def upload_record():
         db = create_engine(current_app.config.get('DATABASE'))
         video_id = uuid.uuid4()
         now = datetime.datetime.now()
-        _, file_ext = os.path.splitext(uploaded_file.filename)
+        source_filename, file_ext = os.path.splitext(uploaded_file.filename)
         if type_file=='audio':
             output_filename = os.path.join(b32encode(video_id.bytes).strip(b'=').lower().decode('ascii'), 'video' + '.mp3')
+            source_filename = source_filename+'.mp4'
         if type_file=='video':
             output_filename = os.path.join(b32encode(video_id.bytes).strip(b'=').lower().decode('ascii'), 'video' + '.mp4')
+            source_filename = source_filename+'.mp4'
+            
+
 
         os.makedirs(os.path.join(DOWNLOADS_LOCATION, os.path.dirname(output_filename)), exist_ok=True)
         db.execute(download_videos.insert().values(
             video_id=video_id,
             filename=output_filename,
             link='',
-            title=uploaded_file.filename,
+            title=source_filename,
             quality=None,
             task_begin=now,
             task_end=now,
-            status=TaskStatus.COMPLETED.value
+            status=TaskStatus.WORKING.value
         ))
         uploaded_file.save(os.path.join(DOWNLOADS_LOCATION, output_filename))
         return {
             "success": True,
+            "type": type_file,
             "result": {
-                "videoId": video_id
+                "videoId": video_id,
+                "source_filename": source_filename
             }
         }
     try:
-        resp = videoservice.start(uploaded_file['filename'], output_filename,type_file)
+        resp = videoservice.start(source_filename, output_filename,type_file)
     except:
         return { 'success': False, 'error': 'Failed to request service' }
     if resp['ok']:
-        return { 'success': True, 'result': { 'source': uploaded_file['filename'], 'output': output_filename } }
+        return { 'success': True, 'result': { 'source': source_filename, 'output': output_filename } }
     else:
         return { 'success': False, 'error': resp['error'] }
     
+
+@api.after_request
+def add_cors_headers(response):
+    headers = response.headers
+    headers['Access-Control-Allow-Origin'] = '*'
+    headers['Access-Control-Allow-Methods'] = 'GET,POST,DELETE'
+    headers['Access-Control-Allow-Headers'] = 'Content-Type'
+    return response
+
