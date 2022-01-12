@@ -88,7 +88,7 @@ def upload_record():
         source_filename, file_ext = os.path.splitext(uploaded_file.filename)
         if type_file=='audio':
             output_filename = os.path.join(b32encode(video_id.bytes).strip(b'=').lower().decode('ascii'), 'video' + '.mp3')
-            source_filename = source_filename+'.mp4'
+            source_filename = source_filename+'.mp3'
         if type_file=='video':
             output_filename = os.path.join(b32encode(video_id.bytes).strip(b'=').lower().decode('ascii'), 'video' + '.mp4')
             source_filename = source_filename+'.mp4'
@@ -107,22 +107,17 @@ def upload_record():
             status=TaskStatus.WORKING.value
         ))
         uploaded_file.save(os.path.join(DOWNLOADS_LOCATION, output_filename))
-        return {
-            "success": True,
-            "type": type_file,
-            "result": {
-                "videoId": video_id,
-                "source_filename": source_filename
-            }
-        }
-    try:
-        resp = videoservice.start(source_filename, output_filename,type_file)
-    except:
-        return { 'success': False, 'error': 'Failed to request service' }
-    if resp['ok']:
-        return { 'success': True, 'result': { 'source': source_filename, 'output': output_filename } }
-    else:
-        return { 'success': False, 'error': resp['error'] }
+        try:
+            resp = videoservice.start(source_filename, output_filename,type_file)
+        except:
+            return { 'success': False, 'error': 'Failed to request service' }
+        if resp['ok']:
+            return { 'success': True, 'result': { 'source': source_filename, 'output': output_filename } }
+        else:
+            return { 'success': False, 'error': resp['error'] }
+
+      
+    
     
 
 @api.after_request
