@@ -52,6 +52,7 @@ function updateProgress(outputFilename){
 function updateVideoMeta(){
     var player = document.all.editorPlayer;
     model.timeline.setDuration(Math.floor(player.duration * 10) / 10);
+    model.audioOnly = (player.src.indexOf('.mp3') != -1);
 }
 
 function playerUpdate(){
@@ -95,7 +96,8 @@ function main(){
             selectionStart: 0,
             selectionEnd: 0,
             isPlaying: false,
-            isMuted: false
+            isMuted: false,
+            audioOnly: false
         },
         watch: {
             processingDialogVisible: function(){
@@ -218,7 +220,7 @@ function main(){
 
 Vue.component('cut-mode-selector', {
     template: '#cut-mode-selector',
-    props: ['value'],
+    props: ['value', 'disabled'],
     data: function(){
         return {
         }
