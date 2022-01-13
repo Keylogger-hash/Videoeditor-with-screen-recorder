@@ -1,7 +1,7 @@
 import os
 import typing as t
 from threading import Event
-from processing_service.myff import FFprobe, FFmpeg, Error as FFmpegError
+from encoding_service.myff import FFprobe, FFmpeg, Error as FFmpegError
 
 ERROR_INCORRECT_ARGUMENTS = 500
 ERROR_PROBE_FAILED = 510
@@ -16,12 +16,11 @@ def parsetime(text: str) -> float:
     return int(s) * 1e6 + int(ms)
 
 
-def convert_file(input_file: str, output_file: str,  type: str, external_stop: t.Optional[Event]=None, progress_callback=None, start_callback=None) -> t.Optional[int]:
+def convert_file(input_filename: str,output_file: str,  type: str, external_stop: t.Optional[Event]=None, progress_callback=None, start_callback=None) -> t.Optional[int]:
     try:
         if start_callback is not None:
             start_callback()
-        total_duration = float(FFprobe().input(input_file).options(select_streams='v:0', show_entries='format=duration').json()['format']['duration'])
-    
+        total_duration = float(FFprobe().input(input_filename).options(select_streams='v:0', show_entries='format=duration').json()['format']['duration'])
         extra_options = []
         if type == 'audio':
             extra_options.append('-b:a')
@@ -36,7 +35,7 @@ def convert_file(input_file: str, output_file: str,  type: str, external_stop: t
             extra_options.append('+genpts')
         proc = FFmpeg().\
             global_args('-y', '-v', 'error', '-progress', '-').\
-            input(input_file).\
+            input(input_filename).\
             output(output_file, *TRANSCODING_SETTINGS, *extra_options).\
             run(wait=False)
         while external_stop is None or not external_stop.is_set():

@@ -220,6 +220,7 @@ function main(){
 
 Vue.component('cut-mode-selector', {
     template: '#cut-mode-selector',
+    //props:['value'],
     props: ['value', 'disabled'],
     data: function(){
         return {

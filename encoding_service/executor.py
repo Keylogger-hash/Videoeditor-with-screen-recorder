@@ -6,9 +6,9 @@ from queue import Queue
 from concurrent.futures import ThreadPoolExecutor, Future
 from functools import partial
 from threading import Event
-from processing_service.common import IPCType, IPCMessage, TaskStatus
-from processing_service.ffwrap import convert_file
-from settings import DOWNLOADS_LOCATION, CUTS_LOCATION
+from encoding_service.common import IPCType, IPCMessage, TaskStatus
+from encoding_service.ffwrap import convert_file
+from settings import DOWNLOADS_LOCATION
 
 
 class FFmpegThreadExecutor(object):
@@ -44,7 +44,7 @@ class FFmpegThreadExecutor(object):
         logging.info('Started conversion: %s', output_filename)
         self.datastream.put(IPCMessage(IPCType.STATUS, output_filename, TaskStatus.WORKING))
 
-    def submit(self, input_filename: str, output_filename: str,  type: str='video') -> typing.Optional[Future]:
+    def submit(self, input_filename: str,output_filename: str,  type: str='video') -> typing.Optional[Future]:
         try:
             exit_event = Event()
             self.task_stoppers[output_filename] = exit_event
@@ -58,7 +58,7 @@ class FFmpegThreadExecutor(object):
             task_future.add_done_callback(partial(self.task_done, output_filename))
             return task_future
         except:
-            logging.warning('Error occured during processing: %s', input_filename)
+            logging.warning('Error occured during processing: %s', output_filename)
             traceback.print_exc()
-            self.datastream.put(IPCMessage(IPCType.STATUS, input_filename, TaskStatus.FAILED))
+            self.datastream.put(IPCMessage(IPCType.STATUS, output_filename, TaskStatus.FAILED))
             return None

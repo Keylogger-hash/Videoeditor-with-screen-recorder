@@ -74,6 +74,7 @@ div {
 <script type='text/template' id='cut-mode-selector'>
     <div class='control'>
         <div class='select'>
+            <!-- <select v-bind:value='value' v-on:input='$emit("input", $event.target.value)'> -->
             <select v-bind:disabled='disabled' v-bind:value='value' v-on:input='$emit("input", $event.target.value)'>
                 <option value='both'>Keep both streams</option>
                 <option value='audio'>Audio Only</option>
@@ -286,6 +287,7 @@ div {
                 </div>
                 <div class='controls-group'>
                     <div class='field has-addons'>
+                        <!-- <cut-mode-selector v-model='cutMode' ref='cutSelector'></cut-mode-selector> -->
                         <cut-mode-selector v-model='cutMode' v-bind:disabled='audioOnly' ref='cutSelector'></cut-mode-selector>
                         <div class='control'>
                             <button class='button is-primary' v-on:click='startCutting' title='Cut'>

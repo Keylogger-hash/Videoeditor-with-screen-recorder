@@ -1,3 +1,4 @@
+from ast import Interactive
 import zmq
 import os
 import json
@@ -6,7 +7,7 @@ import typing
 from sqlalchemy import create_engine
 from sqlalchemy.sql import select
 from flask import Blueprint, current_app, request
-from database.datamodel import videos, download_videos
+from database.datamodel import records
 import uuid
 import datetime
 from base64 import b32encode
@@ -64,6 +65,62 @@ class EncodeVideoService(object):
             'output': destination
         })
 
+@api.get("/record/<output_name>/")
+def get_record_progress(output_name):
+    db = create_engine(current_app.config.get('DATABASE'))
+    result = db.execute(select([records]).where(records.c.output_filename==output_name)).fetchone()
+    if result is None:
+        return {
+            "success":False,
+            "error": "Result is none"
+        }
+    return {
+        "success":True,
+        "output_name":result['output_name'],
+        "title": result["title"],
+        "type": result["type"],
+        "taskStartedAt":result["task_begin"],
+        "taskFinishedAt": result["task_end"],
+        "progress": result['progress']
+    }
+
+@api.get("/records/")
+def get_all_records():
+    db = create_engine(current_app.config.get('DATABASE'))
+    result = db.execute(select[records]).fetchall()
+    return {
+        "success": True,
+        "data":[{
+            "output_name":item['output_name'],
+            "title": item["title"],
+            "type": item["type"],
+            "taskStartedAt":item["task_begin"],
+            "taskFinishedAt": item["task_end"],
+            "progress": item['progress']
+        } for item in result]
+    }
+
+@api.delete("/record/<output_name>/")
+def delete_record(output_name):
+    db = create_engine(current_app.config.get('DATABASE'))
+    result = db.execute(select([records]).where(records.c.output_filename == output_name)).fetchone()
+    if result is None:
+        return {
+            'success': False,
+            'error': 'Not found'
+        }
+    if result['status'] in (TaskStatus.QUEUED, TaskStatus.WORKING, TaskStatus.INACTIVE):
+        videoservice = EncodeVideoService(current_app.config.get('ENCODE_SERVICE_ADDR'))
+        try:
+            resp = videoservice.stop(output_name)
+        except:
+            print('Got exception when requested service')
+    db.execute(records.delete().where(records.c.output_filename == output_name))
+    # NOTE: remove in service instead?
+    if os.path.isfile(os.path.join(DOWNLOADS_LOCATION, output_name)):
+        os.remove(os.path.join(DOWNLOADS_LOCATION, output_name))
+    return {'success': True}
+
 @api.post("/record/")
 def upload_record():
     type_file = ""
@@ -85,28 +142,27 @@ def upload_record():
         db = create_engine(current_app.config.get('DATABASE'))
         video_id = uuid.uuid4()
         now = datetime.datetime.now()
-        source_filename, file_ext = os.path.splitext(uploaded_file.filename)
+        dirname = b32encode(video_id.bytes).strip(b'=').lower().decode('ascii')
+        title, file_ext = os.path.splitext(uploaded_file.filename)
         if type_file=='audio':
-            output_filename = os.path.join(b32encode(video_id.bytes).strip(b'=').lower().decode('ascii'), 'video' + '.mp3')
-            source_filename = source_filename+'.mp3'
+            output_filename = os.path.join(dirname, dirname + '.mp3')
+            source_filename = os.path.join(dirname,'audio.webm')
         if type_file=='video':
-            output_filename = os.path.join(b32encode(video_id.bytes).strip(b'=').lower().decode('ascii'), 'video' + '.mp4')
-            source_filename = source_filename+'.mp4'
+            output_filename = os.path.join(dirname, dirname+'.mp4')
+            source_filename = os.path.join(dirname,'video.webm')
             
 
 
-        os.makedirs(os.path.join(DOWNLOADS_LOCATION, os.path.dirname(output_filename)), exist_ok=True)
-        db.execute(download_videos.insert().values(
-            video_id=video_id,
-            filename=output_filename,
-            link='',
-            title=source_filename,
-            quality=None,
+        os.makedirs(os.path.join(DOWNLOADS_LOCATION, os.path.dirname(source_filename)), exist_ok=True)
+        db.execute(records.insert().values(
+            output_filename=output_filename,
+            title=title,
+            type=type_file,
+            source=source_filename,
             task_begin=now,
-            task_end=now,
-            status=TaskStatus.WORKING.value
+            status=TaskStatus.INACTIVE.value,
         ))
-        uploaded_file.save(os.path.join(DOWNLOADS_LOCATION, output_filename))
+        uploaded_file.save(os.path.join(DOWNLOADS_LOCATION, source_filename))
         try:
             resp = videoservice.start(source_filename, output_filename,type_file)
         except:
@@ -115,6 +171,9 @@ def upload_record():
             return { 'success': True, 'result': { 'source': source_filename, 'output': output_filename } }
         else:
             return { 'success': False, 'error': resp['error'] }
+
+        
+        
 
       
     
@@ -127,4 +186,3 @@ def add_cors_headers(response):
     headers['Access-Control-Allow-Methods'] = 'GET,POST,DELETE'
     headers['Access-Control-Allow-Headers'] = 'Content-Type'
     return response
-

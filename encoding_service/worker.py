@@ -9,11 +9,11 @@ from concurrent.futures import Future
 from threading import Event, Thread
 from queue import Queue, Empty as QueueIsEmpty
 from sqlalchemy import create_engine
-from processing_service.executor import FFmpegThreadExecutor
-from processing_service.common import IPCType, TaskStatus
+from encoding_service.executor import FFmpegThreadExecutor
+from encoding_service.common import IPCType, TaskStatus
 from shared.zmqserver import ZMQServer
-from database.datamodel import download_videos
-from settings import DOWNLOADS_LOCATION as UPLOADS_LOCATION
+from database.datamodel import records
+from settings import DOWNLOADS_LOCATION 
 
 WORKER_IPC_POLL = 10
 
@@ -36,11 +36,11 @@ class ProcessingWorker(Thread):
         self.tasks = {} # type: typing.Dict[str, WorkerTask]
         self.ffmpeg_executor = FFmpegThreadExecutor(self.tasks_datastream, task_limit) # type: FFmpegThreadExecutor
 
-    def add_task(self, input_filename: str, output_filename: str, type:str) -> None:
+    def add_task(self, input_filename: str,output_filename: str, type:str) -> None:
         if output_filename in self.tasks:
             raise KeyError('Output file is queued already')
         self.tasks[output_filename] = WorkerTask(output_filename, None)
-        future = self.ffmpeg_executor.submit(input_filename, output_filename, type)
+        future = self.ffmpeg_executor.submit(input_filename,output_filename, type)
         self.tasks[output_filename].deferred_task = future
         self.on_status_changed(output_filename, TaskStatus.QUEUED)
 
@@ -111,12 +111,12 @@ class DatabaseProcessingWorker(ProcessingWorker):
         elif status in (TaskStatus.COMPLETED, TaskStatus.FAILED):
             extra_changes['task_end'] = datetime.datetime.now()
         self.dbe.execute(
-            download_videos.update().where(download_videos.c.output_filename == subject).values(status=status.value, ** extra_changes)
+            records.update().where(records.c.output_filename == subject).values(status=status.value, ** extra_changes)
         )
 
     def on_progress(self, subject: str, percent: float):
         self.dbe.execute(
-            download_videos.update().where(download_videos.c.output_filename == subject).values(progress=int(percent))
+            records.update().where(records.c.output_filename == subject).values(progress=int(percent))
         )
 
 class EncodeServiceListener(ZMQServer):
@@ -141,7 +141,7 @@ class EncodeServiceListener(ZMQServer):
         elif request['method'] == 'encode':
             if request['type'] is not None and request['type'] not in ('audio', 'video'):
                 raise ValueError('Incorrect type option value')
-            if not os.path.isfile(os.path.join(UPLOADS_LOCATION, request['input'])):
+            if not os.path.isfile(os.path.join(DOWNLOADS_LOCATION, request['input'])):
                 raise IOError('Source not found')
             self.worker.add_task(
                 request['input'],
@@ -195,11 +195,10 @@ def start_server(address: str, worker: ProcessingWorker) -> None:
                     reply = None
                     if request['method'] == 'ping':
                         reply = 'pong'
-                    elif request['method'] == 'cut':
+                    elif request['method'] == 'encode':
                         if request['type'] is not None and request['type'] not in ('audio', 'video'):
                             raise ValueError('Incorrect keepStreams option value')
-                       
-                        if not os.path.isfile(os.path.join(UPLOADS_LOCATION, request['input'])):
+                        if not os.path.isfile(os.path.join(DOWNLOADS_LOCATION, request['input'])):
                             raise IOError('Source not found')
                         worker.add_task(
                             request['input'],
