@@ -19,10 +19,10 @@ WORKER_IPC_POLL = 10
 
 
 class WorkerTask(object):
-    __slots__ = ['output_filename', 'deferred_task', 'progress', 'status']
+    __slots__ = ['output_name', 'deferred_task', 'progress', 'status']
 
-    def __init__(self, output_filename: str, deferred_task: Future) -> None:
-        self.output_filename = output_filename # type: str
+    def __init__(self, output_name: str, deferred_task: Future) -> None:
+        self.output_name = output_name # type: str
         self.deferred_task = deferred_task # type: Future
         self.progress = 0 # type: float
         self.status = TaskStatus.QUEUED # type: TaskStatus
@@ -36,27 +36,27 @@ class ProcessingWorker(Thread):
         self.tasks = {} # type: typing.Dict[str, WorkerTask]
         self.ffmpeg_executor = FFmpegThreadExecutor(self.tasks_datastream, task_limit) # type: FFmpegThreadExecutor
 
-    def add_task(self, input_filename: str,output_filename: str, type:str) -> None:
-        if output_filename in self.tasks:
+    def add_task(self, input_filename: str,output_name: str, type:str) -> None:
+        if output_name in self.tasks:
             raise KeyError('Output file is queued already')
-        self.tasks[output_filename] = WorkerTask(output_filename, None)
-        future = self.ffmpeg_executor.submit(input_filename,output_filename, type)
-        self.tasks[output_filename].deferred_task = future
-        self.on_status_changed(output_filename, TaskStatus.QUEUED)
+        self.tasks[output_name] = WorkerTask(output_name, None)
+        future = self.ffmpeg_executor.submit(input_filename,output_name, type)
+        self.tasks[output_name].deferred_task = future
+        self.on_status_changed(output_name, TaskStatus.QUEUED)
 
-    def stop_task(self, output_filename: str) -> None:
-        self.ffmpeg_executor.stop_task(output_filename)
+    def stop_task(self, output_name: str) -> None:
+        self.ffmpeg_executor.stop_task(output_name)
         # NOTE: task will be deleted when executor stops thread
         # del self.tasks[output_filename]
 
-    def get_task_info(self, output_filename: str) -> typing.Optional[WorkerTask]:
-        if output_filename in self.tasks:
-            return self.tasks[output_filename]
+    def get_task_info(self, output_name: str) -> typing.Optional[WorkerTask]:
+        if output_name in self.tasks:
+            return self.tasks[output_name]
         return None
 
     def list_tasks(self):
         return [
-            dict(outputFilename=task.output_filename, progress=task.progress, status=task.status.name)
+            dict(outputFilename=task.output_name, progress=task.progress, status=task.status.name)
             for _, task in self.tasks.items()
         ]
 
@@ -111,12 +111,12 @@ class DatabaseProcessingWorker(ProcessingWorker):
         elif status in (TaskStatus.COMPLETED, TaskStatus.FAILED):
             extra_changes['task_end'] = datetime.datetime.now()
         self.dbe.execute(
-            records.update().where(records.c.output_filename == subject).values(status=status.value, ** extra_changes)
+            records.update().where(records.c.output_name == subject).values(status=status.value, ** extra_changes)
         )
 
     def on_progress(self, subject: str, percent: float):
         self.dbe.execute(
-            records.update().where(records.c.output_filename == subject).values(progress=int(percent))
+            records.update().where(records.c.output_name == subject).values(progress=int(percent))
         )
 
 class EncodeServiceListener(ZMQServer):
