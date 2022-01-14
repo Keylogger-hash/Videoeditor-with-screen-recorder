@@ -18,9 +18,15 @@ function uploadRecord(blob, mimetype, filename){
     } else if (mimetype == 'audio/webm'){
         fd.append("audio", blob, filename)
     }
-    var request = new XMLHttpRequest()
-    request.open('POST','/api/records/')
-    request.send(fd)
+    var request = new XMLHttpRequest();
+    request.open('POST','/api/records/');
+    request.onreadystatechange = function(){
+        if((request.readyState == XMLHttpRequest.DONE) && (request.status == 200)){
+            var data = JSON.parse(request.responseText);
+            app.recordingDone(data.result.id);
+        }
+    };
+    request.send(fd);
 }
 
 function recordStream(stream, mimeType){
@@ -97,7 +103,9 @@ function main(){
             videoSource: null,
             audioSource: false,
             isRecording: false,
-            recorder: null
+            recorder: null,
+            encodingProgress: 0,
+            encodingDone: true
         },
         computed: {
             recordButtonCaption: function(){
@@ -122,7 +130,30 @@ function main(){
                 } else {
                     startRecording({ video: this.videoSource, audio: this.audioSource });
                 }
-            }
+            },
+            recordingDone: function(id){
+                this.encodingDone = false;
+                this.watchProcessing(id);
+            },
+            watchProcessing: function(id){
+                fetch('/api/records/' + id + '/')
+                .then(r => r.json())
+                .then((data) => {
+                    if(data.success){
+                        if((data.result.status == 'QUEUED') || (data.result.status == 'WORKING') || (data.result.status == 'INACTIVE')){
+                            this.encodingProgress = Math.floor(data.result.progress);
+                            setTimeout(this.watchProcessing.bind(this, id), 1000);
+                        } else if(data.result.status == 'FAILED') {
+                            console.error('error');
+                            this.encodingDone = true;
+                            this.encodingProgress = 0;
+                        } else {
+                            this.encodingDone = true;
+                            this.encodingProgress = 0;
+                        }
+                    }
+                })
+            },
         }
     });
 }

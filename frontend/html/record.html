@@ -26,5 +26,11 @@
         <div v-show='isRecording'>
             <video ref='player' controls="hidden" autoplay muted></video>
         </div>
+        <div class='block' v-show='!encodingDone'>
+            Record processing progress
+        </div>
+        <div class='block' v-show='!encodingDone'>
+            <progress class='progress' min='0' max='100' v-bind:value='encodingProgress'></progress>
+        </div>
     </div>
 </div>

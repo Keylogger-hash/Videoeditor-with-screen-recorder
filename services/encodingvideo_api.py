@@ -75,15 +75,17 @@ def get_record_progress(video_id):
             "error": "Result is none"
         }
     return {
-        "success":True,
-        "resultId": video_id,
-        "output_name": result['output_name'],
-        "title": result["title"],
-        'status': TaskStatus(result["status"]).name,
-        "type": result["type"],
-        "taskStartedAt": result["task_begin"],
-        "taskFinishedAt": result["task_end"],
-        "progress": result['progress']
+        "success": True,
+        'result': {
+            "id": video_id,
+            "output_name": result['output_name'],
+            "title": result["title"],
+            'status': TaskStatus(result["status"]).name,
+            "type": result["type"],
+            "taskStartedAt": result["task_begin"],
+            "taskFinishedAt": result["task_end"],
+            "progress": result['progress']
+        }
     }
 
 @api.get("/records/")
@@ -175,7 +177,7 @@ def upload_record():
         except:
             return { 'success': False, 'error': 'Failed to request service' }
         if resp['ok']:
-            return { 'success': True, 'result': { "resultId":video_id,'source': source_name, 'output': output_name } }
+            return { 'success': True, 'result': { "id": video_id, 'source': source_name, 'output': output_name } }
         else:
             return { 'success': False, 'error': resp['error'] }
 
