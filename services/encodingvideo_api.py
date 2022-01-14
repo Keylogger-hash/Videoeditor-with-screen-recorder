@@ -65,22 +65,23 @@ class EncodeVideoService(object):
             'output': destination
         })
 
-@api.get("/record/<video_id>/")
+@api.get("/records/<video_id>/")
 def get_record_progress(video_id):
     db = create_engine(current_app.config.get('DATABASE'))
     result = db.execute(select([records]).where(records.c.video_id==video_id)).fetchone()
     if result is None:
         return {
-            "success":False,
+            "success": False,
             "error": "Result is none"
         }
     return {
         "success":True,
-        "resultId":video_id,
-        "output_name":result['output_name'],
+        "resultId": video_id,
+        "output_name": result['output_name'],
         "title": result["title"],
+        'status': TaskStatus(result["status"]).name,
         "type": result["type"],
-        "taskStartedAt":result["task_begin"],
+        "taskStartedAt": result["task_begin"],
         "taskFinishedAt": result["task_end"],
         "progress": result['progress']
     }
@@ -88,21 +89,22 @@ def get_record_progress(video_id):
 @api.get("/records/")
 def get_all_records():
     db = create_engine(current_app.config.get('DATABASE'))
-    result = db.execute(select[records]).fetchall()
+    result = db.execute(select([records]).order_by(records.c.title.asc())).fetchall()
     return {
         "success": True,
         "data":[{
-            "resultId":item["video_id"],
-            "output_name":item['output_name'],
+            "resultId": item["video_id"],
+            "output_name": item['output_name'],
             "title": item["title"],
             "type": item["type"],
-            "taskStartedAt":item["task_begin"],
+            'status': TaskStatus(item["status"]).name,
+            "taskStartedAt": item["task_begin"],
             "taskFinishedAt": item["task_end"],
             "progress": item['progress']
         } for item in result]
     }
 
-@api.delete("/record/<video_id>/")
+@api.delete("/records/<video_id>/")
 def delete_record(video_id):
     db = create_engine(current_app.config.get('DATABASE'))
     result = db.execute(select([records]).where(records.c.video_id == video_id)).fetchone()
@@ -126,7 +128,7 @@ def delete_record(video_id):
         os.remove(os.path.join(DOWNLOADS_LOCATION, result["source_name"]))
     return {'success': True}
 
-@api.post("/record/")
+@api.post("/records/")
 def upload_record():
     type_file = ""
     output_name = ""
@@ -156,7 +158,7 @@ def upload_record():
         if type_file=='video':
             output_name = os.path.join(dirname, dirname+'.mp4')
             source_name = os.path.join(dirname,'video.webm')
-            
+
         os.makedirs(os.path.join(DOWNLOADS_LOCATION, os.path.dirname(source_name)), exist_ok=True)
         db.execute(records.insert().values(
             video_id=video_id,
@@ -176,13 +178,6 @@ def upload_record():
             return { 'success': True, 'result': { "resultId":video_id,'source': source_name, 'output': output_name } }
         else:
             return { 'success': False, 'error': resp['error'] }
-
-        
-        
-
-      
-    
-    
 
 @api.after_request
 def add_cors_headers(response):

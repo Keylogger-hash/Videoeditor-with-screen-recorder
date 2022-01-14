@@ -85,6 +85,20 @@
             </td>
             <td>
                 <div class='buttons has-addons are-small'>
+                    <a :href='"/edit?record=" + item.id' class='button'>Edit</a>
+                    <button class='button is-danger' v-on:click='deleteRecord(item.output_name)'>Remove</button>
+                </div>
+            </td>
+        </tr>
+        <!-- records -->
+        <tr v-for='item in records' v-if='showTypes.includes("records")'>
+            <td><span class='tag is-danger'>Record</span></td>
+            <td>{{ item.title }}</td>
+            <td>
+                <div class='tag' v-bind:class='{ "is-danger": item.status == "FAILED", "is-success": item.status == "COMPLETED", "is-warning": item.status == "INACTIVE" }'>{{ item.status }}</div>
+            </td>
+            <td>
+                <div class='buttons has-addons are-small'>
                     <button class='button' v-on:click='showPreview(item.filename)'>View</button>
                     <button class='button is-danger' v-on:click='deleteClip(item.filename)'>Remove</button>
                 </div>

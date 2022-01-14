@@ -71,9 +71,10 @@ function main(){
         el: '#sourcesList',
         data: {
             showTypeFilter: false,
-            showTypes: ['sources', 'clips'],
+            showTypes: ['sources', 'clips', 'records'],
             sources: [],
-            clips: []
+            clips: [],
+            records: []
         },
         methods: {
             fetchSources: function(){
@@ -94,6 +95,15 @@ function main(){
                         return;
                     }
                     this.clips = response.cuts;
+                });
+                fetch('/api/records/')
+                .then(r => r.json())
+                .then((response) => {
+                    if(!response.success){
+                        console.warn('Failed to fetch records');
+                        return;
+                    }
+                    this.records = response.data;
                 });
             },
             showPreview: function(id){
