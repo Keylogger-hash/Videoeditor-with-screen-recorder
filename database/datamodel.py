@@ -25,3 +25,16 @@ download_videos = Table('download_videos', metadata,
     Column('task_end', DateTime, nullable=True),
     Column('status', Integer, nullable=False, default=TaskStatus.INACTIVE.value),
 )
+
+
+records = Table('records', metadata,
+    Column('video_id',UUID(as_uuid=True), nullable=False, primary_key=True),
+    Column('output_name', String, nullable=False),
+    Column('source_name', String, nullable=False),
+    Column('title', String, nullable=True),
+    Column('type', String, nullable=False),
+    Column('status', Integer, nullable=False, default=TaskStatus.INACTIVE.value),
+    Column('task_begin', DateTime, nullable=True),
+    Column('task_end', DateTime, nullable=True),    
+    Column('progress', Integer, default=0)
+)

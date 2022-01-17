@@ -22,13 +22,15 @@
         }
     </style>
     <script>
+        videoElement = document.getElementById('#main-player')
         document.addEventListener('DOMContentLoaded', function(){
             var player = new Plyr('#main-player');
         });
+        
     </script>
 </head>
 <body>
     <video id='main-player' controls>
-        <source src='/files/cuts/{{ output_name }}' type='video/mp4'></source>
+        <source src='{{ output_name }}' type='video/mp4'></source>         
     </video>
 </body>

@@ -17,6 +17,9 @@
             <div class='navbar-item'>
                 <button class='button is-dark' onclick='modals.ytDownloadDialog = true'>Download from YT</button>
             </div>
+            <div class="navbar-item">
+                <a href="/record" class="button is-dark">Record</a>
+            </div>
         </div>
         <div class='navbar-end'>
             <a class='navbar-item' href='/edit'>Editor</a>
@@ -68,6 +71,7 @@
             <td>
                 <div  class='buttons has-addons are-small'>
                     <a :href='"/edit?video=" + item.id' class='button'>Edit</a>
+                    <a :href='"/play/download/"+item.filename_view' class='button'>View</a>
                     <button class='button is-danger' v-on:click='deleteVideo(item.id)'>Remove</button>
                 </div>
             </td>
@@ -82,8 +86,24 @@
             </td>
             <td>
                 <div class='buttons has-addons are-small'>
-                    <button class='button' v-on:click='showPreview(item.filename)'>View</button>
+                    <!-- <a :href='"/edit?record=" + item.id' class='button'>Edit</a> -->
+                    <a :href='"/play/video/"+item.filename' class='button'>View</a>
                     <button class='button is-danger' v-on:click='deleteClip(item.filename)'>Remove</button>
+                </div>
+            </td>
+        </tr>
+        <!-- records -->
+        <tr v-for='item in records' v-if='showTypes.includes("records")'>
+            <td><span class='tag is-danger'>Record</span></td>
+            <td>{{ item.title }}</td>
+            <td>
+                <div class='tag' v-bind:class='{ "is-danger": item.status == "FAILED", "is-success": item.status == "COMPLETED", "is-warning": item.status == "INACTIVE" }'>{{ item.status }}</div>
+            </td>
+            <td>
+                <div class='buttons has-addons are-small'>
+                    <a :href='"/edit?record=" + item.resultId' class='button'>Edit</a>
+                    <a :href='"/play/record/"+item.output_name_view' class='button'>View</a>
+                    <button class='button is-danger' v-on:click='deleteRecord(item.resultId)'>Remove</button>
                 </div>
             </td>
         </tr>

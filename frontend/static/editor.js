@@ -22,6 +22,7 @@ function loadSelectedSource(){
 
 function loadSource(videoId){
     model.selectedSource = videoId;
+    model.typeVideo='video'
     fetch(apiURL + '/downloads/' + videoId + '/info')
     .then(r => r.json())
     .then(({ success, result }) => {
@@ -31,6 +32,21 @@ function loadSource(videoId){
         }
         var player = document.all.editorPlayer;
         player.src = videoBaseURL + result.filename;
+    })
+}
+
+function loadSourceRecord(recordId){
+    model.selectedSource = recordId;
+    model.typeVideo='record'
+    fetch(apiURL + '/records/' + recordId + '/info')
+    .then(r => r.json())
+    .then(({ success, result }) => {
+        if(!success){
+            console.warn('Cannot get source video info');
+            return;
+        }
+        var player = document.all.editorPlayer;
+        player.src = videoBaseURL + result.output_name;
     })
 }
 
@@ -52,6 +68,7 @@ function updateProgress(outputFilename){
 function updateVideoMeta(){
     var player = document.all.editorPlayer;
     model.timeline.setDuration(Math.floor(player.duration * 10) / 10);
+    model.audioOnly = (player.src.indexOf('.mp3') != -1);
 }
 
 function playerUpdate(){
@@ -95,7 +112,8 @@ function main(){
             selectionStart: 0,
             selectionEnd: 0,
             isPlaying: false,
-            isMuted: false
+            isMuted: false,
+            audioOnly: false
         },
         watch: {
             processingDialogVisible: function(){
@@ -115,6 +133,13 @@ function main(){
                 fetch(apiURL + '/downloads/')
                 .then(r => r.json())
                 .then(({ success, downloads: sources }) => {
+                    this.sources = sources.filter((item) => { return item.status == 'COMPLETED' });
+                })
+            },
+            fetchSourcesRecords: function(){
+                fetch(apiURL + '/records/')
+                .then(r => r.json())
+                .then(({ success, data: sources }) => {
                     this.sources = sources.filter((item) => { return item.status == 'COMPLETED' });
                 })
             },
@@ -207,18 +232,25 @@ function main(){
     if(location.search.length > 1){
         var params = new URLSearchParams(location.search);
         var videoId = params.get('video');
+        var recordId = params.get('record')
         if(videoId !== null){
             model.selectedSource = videoId;
             loadSource(videoId);
+            model.fetchSources();
+        }
+        if (recordId !== null){
+            model.selectedSource = recordId;
+            loadSourceRecord(recordId)
+            model.fetchSourcesRecords();
         }
     }
-    model.fetchSources();
     tippy(document.querySelector('#shareVideoLink'), { trigger: 'click', content: 'Copied to clipboard' });
 }
 
 Vue.component('cut-mode-selector', {
     template: '#cut-mode-selector',
-    props: ['value'],
+    //props:['value'],
+    props: ['value', 'disabled'],
     data: function(){
         return {
         }
@@ -234,12 +266,12 @@ Vue.component('video-cut-form', {
             error: null,
             progress: null,
             outputName: null,
-            description: ''
+            description: '',
         }
     },
     computed: {
         shareLink: function(){
-            return location.protocol + '//' + location.host + '/play/' + this.outputName;
+            return location.protocol + '//' + location.host + '/play/video/' + this.outputName;
         },
         downloadLink: function(){
             return cutsBaseURL + this.outputName;
@@ -261,6 +293,7 @@ Vue.component('video-cut-form', {
             this.progress = 0;
             this.outputName = null;
             this.description = '';
+            this.type=''
         },
         startProcessing: function(){
             fetch(apiURL + '/cuts/', {
@@ -269,9 +302,10 @@ Vue.component('video-cut-form', {
                 body: JSON.stringify({
                     source: this.source,
                     startAt: this.start,
+                    type: model.typeVideo,
                     endAt: this.end,
                     keepStreams: this.mode,
-                    description: this.description
+                    description: this.description,
                 })
             }).then(r => r.json())
             .then((response) => {

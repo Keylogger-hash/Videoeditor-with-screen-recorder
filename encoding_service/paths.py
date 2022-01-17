@@ -1,0 +1,2 @@
+#UPLOADS_LOCATION = 'uploads'
+#CUTS_LOCATION = 'cuts'

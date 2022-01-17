@@ -1,0 +1,45 @@
+<!doctype html>
+<meta charset='utf-8' />
+<title>Record</title>
+<style></style>
+<link rel="stylesheet" href="/static/libs/bulma.min.css">
+<script src="/static/libs/vue.js"></script>
+<script src="/static/fix-webm-duration.js"></script>
+<script src="/static/record.js"></script>
+
+<div class='navbar is-dark'>
+    <div class='navbar-menu is-active'>
+        <div class='navbar-start'>
+            <a class='navbar-item' href='/'>&larr; Back to menu</a>
+        </div>
+    </div>
+</div>
+<div class='container is-fluid' id='recorderForm'>
+    <div class='box'>
+        <div>
+            <button class="button" v-on:click="toggleScreen" v-bind:class="{ 'is-primary': videoSource == 'screen' }">Display</button>
+            <button class="button" v-on:click="toggleCamera" v-bind:class="{ 'is-primary': videoSource == 'camera' }">Web-camera</button>
+            <button class="button" v-on:click="toggleMic" v-bind:class="{ 'is-primary': audioSource }">Microphone</button>
+
+            <button class="button is-danger" v-on:click="toggleRecording">{{ recordButtonCaption }}</button>
+        </div>
+        <div v-show='isRecording'>
+            <video ref='player' controls="hidden" autoplay muted></video>
+        </div>
+        <div class='block' v-show='isShowButton'>
+            <div class='field'>
+                <div class='control'>
+                    <label>Link to player</label>
+                    <input id='shareVideoLink' type='text' class='input' v-bind:value='shareLink' v-on:click='copyShareLink' readonly />
+                </div>
+            </div>
+            <a v-bind:href='downloadLink' v-bind:download='outputName' class='button '>Download result video</a>
+        </div>
+        <div class='block' v-show='!encodingDone'>
+            Record processing progress
+        </div>
+        <div class='block' v-show='!encodingDone'>
+            <progress class='progress' min='0' max='100' v-bind:value='encodingProgress'></progress>
+        </div>
+    </div>
+</div>

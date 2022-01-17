@@ -71,9 +71,10 @@ function main(){
         el: '#sourcesList',
         data: {
             showTypeFilter: false,
-            showTypes: ['sources', 'clips'],
+            showTypes: ['sources', 'clips', 'records'],
             sources: [],
-            clips: []
+            clips: [],
+            records: []
         },
         methods: {
             fetchSources: function(){
@@ -95,15 +96,35 @@ function main(){
                     }
                     this.clips = response.cuts;
                 });
+                fetch('/api/records/')
+                .then(r => r.json())
+                .then((response) => {
+                    if(!response.success){
+                        console.warn('Failed to fetch records');
+                        return;
+                    }
+                    this.records = response.data;
+                });
             },
             showPreview: function(id){
                 console.log(id);
                 modals.previewClip = id;
             },
+            showPreviewRecord: function(filename){
+                console.log(filename)
+                filename = filename.split("/").join("_")
+            },
             deleteVideo: function(id){
                 fetch('/api/downloads/' + id + '/cancel', { method: 'delete' })
                 .then(r => r.json())
                 .then(() => {
+                    this.fetchSources();
+                })
+            },
+            deleteRecord: function(id){
+                fetch('/api/records/'+id+'/',{method:'delete'})
+                .then(r=> r.json())
+                .then(()=>{
                     this.fetchSources();
                 })
             },
