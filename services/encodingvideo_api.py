@@ -11,6 +11,7 @@ from database.datamodel import records
 import uuid
 import datetime
 from base64 import b32encode
+from shutil import rmtree
 from settings import DOWNLOADS_LOCATION
 from encoding_service.common import TaskStatus
 
@@ -125,10 +126,10 @@ def delete_record(video_id):
             print('Got exception when requested service')
     db.execute(records.delete().where(records.c.video_id == video_id))
     # NOTE: remove in service instead?
-    if os.path.isfile(os.path.join(DOWNLOADS_LOCATION, result["output_name"])):
-        os.remove(os.path.join(DOWNLOADS_LOCATION, result["output_name"]))
-    if os.path.isfile(os.path.join(DOWNLOADS_LOCATION, result["source_name"])):
-        os.remove(os.path.join(DOWNLOADS_LOCATION, result["source_name"]))
+    dirname_for_delete = os.path.join(DOWNLOADS_LOCATION,result["output_name"].split("/")[0]+"/")
+    if os.path.isdir(dirname_for_delete):
+        rmtree(dirname_for_delete)
+    
     return {'success': True}
 
 @api.post("/records/")
