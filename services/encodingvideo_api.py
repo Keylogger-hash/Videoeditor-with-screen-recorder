@@ -65,7 +65,7 @@ class EncodeVideoService(object):
             'output': destination
         })
 
-@api.get("/records/<video_id>/")
+@api.get("records/<video_id>/info")
 def get_record_progress(video_id):
     db = create_engine(current_app.config.get('DATABASE'))
     result = db.execute(select([records]).where(records.c.video_id==video_id)).fetchone()
@@ -97,6 +97,7 @@ def get_all_records():
         "data":[{
             "resultId": item["video_id"],
             "output_name": item['output_name'],
+            "output_name_view": "_".join(item['output_name'].split("/")),
             "title": item["title"],
             "type": item["type"],
             'status': TaskStatus(item["status"]).name,

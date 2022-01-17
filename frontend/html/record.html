@@ -26,6 +26,15 @@
         <div v-show='isRecording'>
             <video ref='player' controls="hidden" autoplay muted></video>
         </div>
+        <div class='block' v-show='isShowButton'>
+            <div class='field'>
+                <div class='control'>
+                    <label>Link to player</label>
+                    <input id='shareVideoLink' type='text' class='input' v-bind:value='shareLink' v-on:click='copyShareLink' readonly />
+                </div>
+            </div>
+            <a v-bind:href='downloadLink' v-bind:download='outputName' class='button '>Download result video</a>
+        </div>
         <div class='block' v-show='!encodingDone'>
             Record processing progress
         </div>

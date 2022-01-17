@@ -34,6 +34,20 @@ function loadSource(videoId){
     })
 }
 
+function loadSourceRecord(videoId){
+    model.selectedSource = videoId;
+    fetch(apiURL + '/records/' + videoId + '/info')
+    .then(r => r.json())
+    .then(({ success, result }) => {
+        if(!success){
+            console.warn('Cannot get source video info');
+            return;
+        }
+        var player = document.all.editorPlayer;
+        player.src = videoBaseURL + result.output_name;
+    })
+}
+
 function updateProgress(outputFilename){
     fetch(apiURL + '/cuts/' + outputFilename)
     .then(r => r.json())
@@ -89,6 +103,7 @@ function main(){
         el: '#app',
         data: {
             cutMode: 'both',
+            typeVideo: 'video',
             sources: [],
             selectedSource: null,
             processingDialogVisible: false,
@@ -117,6 +132,13 @@ function main(){
                 fetch(apiURL + '/downloads/')
                 .then(r => r.json())
                 .then(({ success, downloads: sources }) => {
+                    this.sources = sources.filter((item) => { return item.status == 'COMPLETED' });
+                })
+            },
+            fetchSourcesRecords: function(){
+                fetch(apiURL + '/records/')
+                .then(r => r.json())
+                .then(({ success, data: sources }) => {
                     this.sources = sources.filter((item) => { return item.status == 'COMPLETED' });
                 })
             },
@@ -209,12 +231,18 @@ function main(){
     if(location.search.length > 1){
         var params = new URLSearchParams(location.search);
         var videoId = params.get('video');
+        var recordId = params.get('record')
         if(videoId !== null){
             model.selectedSource = videoId;
             loadSource(videoId);
+            model.fetchSources();
+        }
+        if (recordId !== null){
+            model.selectedSource = recordId;
+            loadSourceRecord(recordId)
+            model.fetchSourcesRecords();
         }
     }
-    model.fetchSources();
     tippy(document.querySelector('#shareVideoLink'), { trigger: 'click', content: 'Copied to clipboard' });
 }
 
@@ -242,7 +270,7 @@ Vue.component('video-cut-form', {
     },
     computed: {
         shareLink: function(){
-            return location.protocol + '//' + location.host + '/play/' + this.outputName;
+            return location.protocol + '//' + location.host + '/play/video/' + this.outputName;
         },
         downloadLink: function(){
             return cutsBaseURL + this.outputName;
@@ -274,7 +302,7 @@ Vue.component('video-cut-form', {
                     startAt: this.start,
                     endAt: this.end,
                     keepStreams: this.mode,
-                    description: this.description
+                    description: this.description,
                 })
             }).then(r => r.json())
             .then((response) => {

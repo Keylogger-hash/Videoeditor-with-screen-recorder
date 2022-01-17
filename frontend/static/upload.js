@@ -110,10 +110,21 @@ function main(){
                 console.log(id);
                 modals.previewClip = id;
             },
+            showPreviewRecord: function(filename){
+                console.log(filename)
+                filename = filename.split("/").join("_")
+            },
             deleteVideo: function(id){
                 fetch('/api/downloads/' + id + '/cancel', { method: 'delete' })
                 .then(r => r.json())
                 .then(() => {
+                    this.fetchSources();
+                })
+            },
+            deleteRecord: function(id){
+                fetch('/api/records/'+id+'/',{method:'delete'})
+                .then(r=> r.json())
+                .then(()=>{
                     this.fetchSources();
                 })
             },

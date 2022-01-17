@@ -9,7 +9,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.sql import select
 from flask import Blueprint, current_app, request
 from jsonschema import validate, ValidationError
-from database.datamodel import videos, download_videos as source_videos
+from database.datamodel import videos, records,download_videos as source_videos
 from processing_service.common import TaskStatus
 from settings import DOWNLOADS_LOCATION, CUTS_LOCATION
 

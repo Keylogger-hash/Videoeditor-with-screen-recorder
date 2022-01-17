@@ -10,6 +10,7 @@ var cameraVideoConstraints = {
         max: 1080
     }
 };
+var recordBaseURL='/files/upload/'
 
 function uploadRecord(blob, mimetype, filename){
     var fd = new FormData()
@@ -105,11 +106,21 @@ function main(){
             isRecording: false,
             recorder: null,
             encodingProgress: 0,
-            encodingDone: true
+            encodingDone: true,
+            isShowButton: false,
+            outputName: ""
         },
         computed: {
             recordButtonCaption: function(){
                 return this.isRecording ? 'Stop recording' : 'Start recording';
+            },
+            shareLink: function(){
+                outputNameSplit = this.outputName
+                outputNameSplit = outputNameSplit.split("/").join("_")
+                return location.protocol + '//' + location.host + '/play/record/' + outputNameSplit;
+            },
+            downloadLink: function(){
+                return  recordBaseURL+this.outputName
             }
         },
         methods: {
@@ -128,6 +139,7 @@ function main(){
                     this.$refs.player.srcObject = null;
                     this.isRecording = false;
                 } else {
+                    this.isShowButton=false
                     startRecording({ video: this.videoSource, audio: this.audioSource });
                 }
             },
@@ -136,7 +148,7 @@ function main(){
                 this.watchProcessing(id);
             },
             watchProcessing: function(id){
-                fetch('/api/records/' + id + '/')
+                fetch('/api/records/' + id + '/info')
                 .then(r => r.json())
                 .then((data) => {
                     if(data.success){
@@ -147,13 +159,22 @@ function main(){
                             console.error('error');
                             this.encodingDone = true;
                             this.encodingProgress = 0;
+                            this.isShowButton = false;
                         } else {
+                            this.outputName=data.result.output_name
                             this.encodingDone = true;
                             this.encodingProgress = 0;
+                            this.isShowButton = true;
                         }
                     }
                 })
             },
+            copyShareLink: function(e){
+                var linkInput = e.target;
+                linkInput.select();
+                document.execCommand('copy');
+                //this.clipboardTooltip.show();
+            }
         }
     });
 }

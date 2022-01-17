@@ -69,6 +69,7 @@ def list_of_records():
                 "id": item['video_id'],
                 "title": item['title'],
                 "filename": item['filename'],
+                "filename_view": "_".join(item['filename'].split("/")),
                 "link": item["link"],
                 "quality": item["quality"],
                 "status": TaskStatus(item["status"]).name

@@ -71,6 +71,7 @@
             <td>
                 <div  class='buttons has-addons are-small'>
                     <a :href='"/edit?video=" + item.id' class='button'>Edit</a>
+                    <a :href='"/play/download/"+item.filename_view' class='button'>View</a>
                     <button class='button is-danger' v-on:click='deleteVideo(item.id)'>Remove</button>
                 </div>
             </td>
@@ -85,8 +86,9 @@
             </td>
             <td>
                 <div class='buttons has-addons are-small'>
-                    <a :href='"/edit?record=" + item.id' class='button'>Edit</a>
-                    <button class='button is-danger' v-on:click='deleteRecord(item.output_name)'>Remove</button>
+                    <!-- <a :href='"/edit?record=" + item.id' class='button'>Edit</a> -->
+                    <a :href='"/play/video/"+item.filename' class='button'>View</a>
+                    <button class='button is-danger' v-on:click='deleteClip(item.filename)'>Remove</button>
                 </div>
             </td>
         </tr>
@@ -99,8 +101,9 @@
             </td>
             <td>
                 <div class='buttons has-addons are-small'>
-                    <button class='button' v-on:click='showPreview(item.filename)'>View</button>
-                    <button class='button is-danger' v-on:click='deleteClip(item.filename)'>Remove</button>
+                    <a :href='"/edit?record=" + item.resultId' class='button'>Edit</a>
+                    <a :href='"/play/record/"+item.output_name_view' class='button'>View</a>
+                    <button class='button is-danger' v-on:click='deleteRecord(item.resultId)'>Remove</button>
                 </div>
             </td>
         </tr>
