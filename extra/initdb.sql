@@ -21,6 +21,19 @@ CREATE TABLE public.videos (
     description TEXT DEFAULT '' NOT NULL
 );
 
+CREATE TABLE records (
+    video_id UUID NOT NULL,
+    output_name VARCHAR NOT NULL,
+    title VARCHAR,
+    type VARCHAR NOT NULL,
+    source_name VARCHAR NOT NULL,
+    status INTEGER NOT NULL,
+    task_begin TIMESTAMP WITHOUT TIME ZONE,
+    task_end TIMESTAMP WITHOUT TIME ZONE,
+    progress INTEGER,
+    PRIMARY KEY (video_id)
+);
+
 ALTER TABLE ONLY public.download_videos
     ADD CONSTRAINT download_videos_pkey PRIMARY KEY (video_id);
 

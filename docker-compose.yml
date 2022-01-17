@@ -29,6 +29,20 @@ services:
             main:
                 aliases:
                 - downloader_svc
+    transcoding_service:
+        build:
+            context: .
+            dockerfile: transcoder.Dockerfile
+        expose:
+        - "4000"
+        volumes:
+        - "uploads:/data/sources"
+        environment:
+            DATABASE: "postgresql://${DB_USER}:${DB_PASSWORD}@dbserver/${DB_NAME}"
+        networks:
+            main:
+                aliases:
+                - transcoder_svc
     api:
         build:
             context: .
