@@ -22,6 +22,7 @@ function loadSelectedSource(){
 
 function loadSource(videoId){
     model.selectedSource = videoId;
+    model.typeVideo='video'
     fetch(apiURL + '/downloads/' + videoId + '/info')
     .then(r => r.json())
     .then(({ success, result }) => {
@@ -34,9 +35,10 @@ function loadSource(videoId){
     })
 }
 
-function loadSourceRecord(videoId){
-    model.selectedSource = videoId;
-    fetch(apiURL + '/records/' + videoId + '/info')
+function loadSourceRecord(recordId){
+    model.selectedSource = recordId;
+    model.typeVideo='record'
+    fetch(apiURL + '/records/' + recordId + '/info')
     .then(r => r.json())
     .then(({ success, result }) => {
         if(!success){
@@ -103,7 +105,6 @@ function main(){
         el: '#app',
         data: {
             cutMode: 'both',
-            typeVideo: 'video',
             sources: [],
             selectedSource: null,
             processingDialogVisible: false,
@@ -265,7 +266,7 @@ Vue.component('video-cut-form', {
             error: null,
             progress: null,
             outputName: null,
-            description: ''
+            description: '',
         }
     },
     computed: {
@@ -292,6 +293,7 @@ Vue.component('video-cut-form', {
             this.progress = 0;
             this.outputName = null;
             this.description = '';
+            this.type=''
         },
         startProcessing: function(){
             fetch(apiURL + '/cuts/', {
@@ -300,6 +302,7 @@ Vue.component('video-cut-form', {
                 body: JSON.stringify({
                     source: this.source,
                     startAt: this.start,
+                    type: model.typeVideo,
                     endAt: this.end,
                     keepStreams: this.mode,
                     description: this.description,

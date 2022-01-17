@@ -20,7 +20,7 @@ TASK_ADD_REQUEST_SCHEMA = {
     'oneOf': [
         {
             'type': 'object',
-            'required': ['source', 'startAt', 'endAt', 'keepStreams' ],
+            'required': ['source', 'startAt', 'type','endAt', 'keepStreams' ],
             'properties': {
                 'source': {
                     'type': 'string'
@@ -28,6 +28,12 @@ TASK_ADD_REQUEST_SCHEMA = {
                 'startAt': {
                     'type': 'number',
                     'minimum': 0
+                },
+                'type':{
+                    'type': 'string',
+                    'enum':[
+                        'video','record'
+                    ]
                 },
                 'endAt': {
                     'type': 'number',
@@ -213,48 +219,97 @@ def start_videocut(db):
             'error': 'Invalid request: {}'.format(e.message)
         }
     videoservice = CutVideoService(current_app.config.get('VIDEOCUT_SERVICE_ADDR'))
-
-    if 'source' in data:
-        source_name = data['source']
-        file_ext = '.mp4' if data['keepStreams'] in ('both', 'video') else '.mp3'
-        output_name = '{}{}'.format(uuid4(), file_ext)
-        source_video = db.execute(select([source_videos.c.filename]).where(source_videos.c.video_id == data['source'])).fetchone()
-        if source_video is None:
-            return {'success': False, 'error': 'Missing source video'}
-        db.execute(
-            videos.insert().values(
+    print(data)
+    if data['type'] == 'video':
+        if 'source' in data:
+            source_name = data['source']
+            file_ext = '.mp4' if data['keepStreams'] in ('both', 'video') else '.mp3'
+            output_name = '{}{}'.format(uuid4(), file_ext)
+            source_video = db.execute(select([source_videos.c.filename]).where(source_videos.c.video_id == data['source'])).fetchone()
+            if source_video is None:
+                return {'success': False, 'error': 'Missing source video'}
+            db.execute(
+                videos.insert().values(
                 output_filename=output_name,
                 source=data['source'],
                 status=TaskStatus.INACTIVE.value,
                 progress=0,
                 description=data['description']
+                )
             )
-        )
-    else:
-        video_cut = db.execute(select([videos.c.status, videos.c.source]).where(videos.c.output_filename == data['destination'])).fetchone()
-        # NOTE: allowing retrying complete task with same output name is meaningless a bit - should be reconsidered
-        if video_cut is not None and video_cut['status'] in (TaskStatus.FAILED, TaskStatus.COMPLETED, TaskStatus.INACTIVE):  # restarting completed/failed task
-            db.execute(
-                videos.update().where(videos.c.output_filename == data['destination']).values(status=TaskStatus.INACTIVE.value, progress=0)
-            )
-            source_name = video_cut['source']
-            output_name = data['destination']
-            source_video = db.execute(select([source_videos.c.filename]).where(source_videos.c.video_id == video_cut['source'])).fetchone()
-            if source_video is None:
+        else:
+            video_cut = db.execute(select([videos.c.status, videos.c.source]).where(videos.c.output_filename == data['destination'])).fetchone()
+            if video_cut is not None and video_cut['status'] in (TaskStatus.FAILED, TaskStatus.COMPLETED, TaskStatus.INACTIVE):  # restarting completed/failed task
+                db.execute(
+                    videos.update().where(videos.c.output_filename == data['destination']).values(status=TaskStatus.INACTIVE.value, progress=0)
+                )
+                source_name = video_cut['source']
+                output_name = data['destination']
+                source_video = db.execute(select([source_videos.c.filename]).where(source_videos.c.video_id == video_cut['source'])).fetchone()
+                if source_video is None:
+                    return {'success': False, 'error': 'Missing source video'}
+            else:  # task is queued/in progress
+                return {
+                    'success': False,
+                    'error': 'Task is active'
+                    }
+        try:
+            resp = videoservice.start(source_video['filename'], output_name, data['startAt'], data['endAt'], data['keepStreams'])
+        except:
+            return { 'success': False, 'error': 'Failed to request service' }
+        if resp['ok']:
+            return { 'success': True, 'result': { 'source': source_name, 'output': output_name } }
+        else:
+            return { 'success': False, 'error': resp['error'] }
+    if data['type']=='record':
+        if 'source' in data:
+            recordId = data['source']
+            file_ext = '.mp4' if data['keepStreams'] in ('both', 'video') else '.mp3'
+            output_name = '{}{}'.format(uuid4(), file_ext)
+            record_video = db.execute(select([records.c.output_name]).where(records.c.video_id == recordId)).fetchone()
+            source_name = record_video['output_name']
+            if record_video is None:
                 return {'success': False, 'error': 'Missing source video'}
-        else:  # task is queued/in progress
-            return {
-                'success': False,
-                'error': 'Task is active'
-            }
-    try:
-        resp = videoservice.start(source_video['filename'], output_name, data['startAt'], data['endAt'], data['keepStreams'])
-    except:
-        return { 'success': False, 'error': 'Failed to request service' }
-    if resp['ok']:
-        return { 'success': True, 'result': { 'source': source_name, 'output': output_name } }
-    else:
-        return { 'success': False, 'error': resp['error'] }
+            db.execute(
+                videos.insert().values(
+                output_filename=output_name,
+                source=record_video['output_name'],
+                status=TaskStatus.INACTIVE.value,
+                progress=0,
+                description=data['description']
+                )
+            )
+            
+        else:
+            video_cut = db.execute(select([videos.c.status, videos.c.source]).where(videos.c.output_filename == data['destination'])).fetchone()
+            if video_cut is not None and video_cut['status'] in (TaskStatus.FAILED, TaskStatus.COMPLETED, TaskStatus.INACTIVE):  # restarting completed/failed task
+                db.execute(
+                    videos.update().where(videos.c.output_filename == data['destination']).values(status=TaskStatus.INACTIVE.value, progress=0)
+                )
+                source_name = video_cut['source']
+                output_name = data['destination']
+                source_video = db.execute(select([records.c.filename]).where(records.c.output_name == source_name)).fetchone()
+                if source_video is None:
+                    return {'success': False, 'error': 'Missing source video'}
+            else:  # task is queued/in progress
+                return {
+                    'success': False,
+                    'error': 'Task is active'
+                    }
+        try:
+            resp = videoservice.start(source_name,output_name ,data['startAt'], data['endAt'], data['keepStreams'])
+            print(resp)
+        except:
+            return { 'success': False, 'error': 'Failed to request service' }
+        if resp['ok']:
+            return { 'success': True, 'result': { 'source': source_name, 'output': output_name } }
+        else:
+            return { 'success': False, 'error': resp['error'] }    
+
+    return {'success':True}
+       
+    
+    
 
 # DEBUG METHOD SHOULD BE REMOVED
 @api.get('/_uploads/')
