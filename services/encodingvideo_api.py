@@ -108,6 +108,12 @@ def get_all_records():
         } for item in result]
     }
 
+@api.post("/records/send/")
+def send_link_record():
+    data = request.json
+    print(data)
+    return {"success":True, "email": data["email"],"filename":data["filename"],"link":data["link"]}
+
 @api.delete("/records/<video_id>/")
 def delete_record(video_id):
     db = create_engine(current_app.config.get('DATABASE'))

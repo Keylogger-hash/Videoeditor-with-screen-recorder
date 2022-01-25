@@ -23,13 +23,6 @@
 
             <button class="button is-danger" v-on:click="toggleRecording">{{ recordButtonCaption }}</button>
         </div>
-        <div>
-            <form action="" method="POST">
-                <p><input type = 'text' name = 'Filename'/></p>
-                <p><input type = 'text' name = 'Email'/></p>
-                <button>Send link</button>
-            </form>
-        </div>
         <div v-show='isRecording'>
             <video ref='player' controls="hidden" autoplay muted></video>
         </div>
@@ -41,6 +34,11 @@
                 </div>
             </div>
             <a v-bind:href='downloadLink' v-bind:download='outputName' class='button '>Download result video</a>
+            <div>
+                <p>Email <input class="input" type = 'text' placeholder="Email" v-model="email"/></p>
+                <p>Filename <input class="input" type = 'text' placeholder="Filename" v-model="filename"/></p>
+                <button class="button" v-on:click="sendLink">Send link</button>
+            </div>
         </div>
         <div class='block' v-show='!encodingDone'>
             Record processing progress

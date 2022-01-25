@@ -108,6 +108,12 @@ async function startRecording(sources){
     app.isRecording = true;
 }
 
+function validateEmail(email){
+    return email.match(
+        /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+      );
+}
+
 function main(){
     app = new Vue({
         el: '#recorderForm',
@@ -119,7 +125,10 @@ function main(){
             encodingProgress: 0,
             encodingDone: true,
             isShowButton: false,
-            outputName: ""
+            outputName: "",
+            playLink: "",
+            email:"",
+            filename:""
         },
         computed: {
             recordButtonCaption: function(){
@@ -128,7 +137,8 @@ function main(){
             shareLink: function(){
                 outputNameSplit = this.outputName
                 outputNameSplit = outputNameSplit.split("/").join("_")
-                return location.protocol + '//' + location.host + '/play/record/' + outputNameSplit;
+                this.playLink = location.protocol + '//' + location.host + '/play/record/' + outputNameSplit;
+                return this.playLink
             },
             downloadLink: function(){
                 return  recordBaseURL+this.outputName
@@ -157,6 +167,47 @@ function main(){
             recordingDone: function(id){
                 this.encodingDone = false;
                 this.watchProcessing(id);
+            },
+            sendLink: function(){
+                email = this.email
+                link = this.playLink
+                filename = this.filename
+                validatedEmail = validateEmail(email)
+                if (!validatedEmail){
+                    alert("Please input correct email")
+                    return
+                }
+                if (!email && !filename){
+                    alert("Please input email and filename")
+                    return
+                } 
+                if (!email && filename){
+                    alert ("Please input email")
+                    return
+                }
+                if (!filename && email) {
+                    alert("Please input filename")
+                    return
+                } else {
+                    localStorage.setItem("email",email)
+                    localStorage.setItem("filename",filename)
+                    fetch('/api/records/send/', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            email:email,
+                            filename: filename,
+                            link:link,
+                        })
+                    }).then(r => r.json())
+                    .then((response) => {
+                        if (response.success){
+                            alert("Email was sent")
+                        } else {
+                            alert("Email wasn't sent")
+                        }
+                    })
+                }
             },
             watchProcessing: function(id){
                 fetch('/api/records/' + id + '/info')
