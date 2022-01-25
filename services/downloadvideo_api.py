@@ -11,6 +11,7 @@ import yt_dlp
 from base64 import b32encode
 import requests
 from settings import DOWNLOADS_LOCATION
+from datetime import datetime
 from download_service.common import TaskStatus
 
 
@@ -70,6 +71,8 @@ def list_of_records():
                 "title": item['title'],
                 "filename": item['filename'],
                 "filename_view": "_".join(item['filename'].split("/")),
+                "task_begin": item["task_begin"],
+                "task_end": item["task_end"],
                 "link": item["link"],
                 "quality": item["quality"],
                 "status": TaskStatus(item["status"]).name
@@ -96,6 +99,8 @@ def get_downloading_info(video_id):
                     "id": result["video_id"],
                     "title": result["title"],
                     "filename": result["filename"],
+                    "task_begin": result["task_begin"],
+                    "task_end": result["task_end"],
                     "link": result["link"],
                     "quality": result["quality"],
                     "status": TaskStatus(result['status']).name,
@@ -116,6 +121,8 @@ def get_downloading_info(video_id):
                 "title": result["title"],
                 "filename": result["filename"],
                 "link": result["link"],
+                "task_begin": result["task_begin"],
+                "task_end": result["task_end"],
                 "quality": result["quality"],
                 "filesize": result["filesize"],
                 "status": TaskStatus(result['status']).name,
@@ -241,6 +248,7 @@ def start_downloading():
         quality = "{} - {}".format(format_ext, format_id)
         video_id = uuid.uuid4()
         output_filename = os.path.join(b32encode(video_id.bytes).strip(b'=').lower().decode('ascii'), 'video.' + format_ext)
+        downloading_time=datetime.now()
         dbe.execute(
             download_videos.insert().values(
                 video_id=video_id,

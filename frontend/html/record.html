@@ -23,6 +23,13 @@
 
             <button class="button is-danger" v-on:click="toggleRecording">{{ recordButtonCaption }}</button>
         </div>
+        <div>
+            <form action="" method="POST">
+                <p><input type = 'text' name = 'Filename'/></p>
+                <p><input type = 'text' name = 'Email'/></p>
+                <button>Send link</button>
+            </form>
+        </div>
         <div v-show='isRecording'>
             <video ref='player' controls="hidden" autoplay muted></video>
         </div>

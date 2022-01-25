@@ -114,32 +114,46 @@ function main(){
                 console.log(filename)
                 filename = filename.split("/").join("_")
             },
-            deleteVideo: function(id){
-                fetch('/api/downloads/' + id + '/cancel', { method: 'delete' })
-                .then(r => r.json())
-                .then(() => {
-                    this.fetchSources();
-                })
+            deleteVideo: function(title,id){
+                message = `Are you sure to delete video:\n${title}?`
+                result = window.confirm(message)
+                if (result) {
+                    fetch('/api/downloads/' + id + '/cancel', { method: 'delete' })
+                    .then(r => r.json())
+                    .then(() => {
+                        this.fetchSources();
+                    })
+                }
             },
-            deleteRecord: function(id){
-                fetch('/api/records/'+id+'/',{method:'delete'})
-                .then(r=> r.json())
-                .then(()=>{
-                    this.fetchSources();
-                })
+            deleteRecord: function(title, id){
+                message = `Are you sure to delete record:\n${title}?`
+                result = window.confirm(message);
+                if (result) {
+                    fetch('/api/records/'+id+'/',{method:'delete'})
+                    .then(r=> r.json())
+                    .then(()=>{
+                        this.fetchSources();
+                    })
+                }
+                
             },
             deleteClip: function(id){
-                fetch('/api/cuts/' + id, {
-                    method: 'DELETE'
-                })
-                .then(r => r.json())
-                .then((response) => {
-                    if(!response.success){
-                        console.warn('Failed to delete video ' + id);
-                        return;
-                    }
-                    this.fetchSources();
-                })
+                message = `Are you sure to delete clip:\n${id}?`
+                result = window.confirm(message)
+                if (result) {
+                    fetch('/api/cuts/' + id, {
+                        method: 'DELETE'
+                    })
+                    .then(r => r.json())
+                    .then((response) => {
+                        if(!response.success){
+                            console.warn('Failed to delete video ' + id);
+                            return;
+                        }
+                        this.fetchSources();
+                    })
+                }
+                
             }
         }
     });

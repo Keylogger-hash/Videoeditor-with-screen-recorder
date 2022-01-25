@@ -10,7 +10,7 @@ var cameraVideoConstraints = {
         max: 1080
     }
 };
-var recordBaseURL='/files/upload/'
+var recordBaseURL='/files/uploads/'
 
 function uploadRecord(blob, mimetype, filename){
     var fd = new FormData()
@@ -33,7 +33,6 @@ function uploadRecord(blob, mimetype, filename){
 function recordStream(stream, mimeType){
     var recordedChunks = []
     var startTime = Date.now()
-    var stopped = false;
 
     var mediaRecorder = new MediaRecorder(stream, { mimeType: mimeType });
     mediaRecorder.ondataavailable = function(event){
@@ -42,6 +41,8 @@ function recordStream(stream, mimeType){
         }
     };
     mediaRecorder.onstop = function(event){
+        stream = mediaRecorder.stream
+        stream.getTracks().forEach(track=>track.stop())
         console.log('Recording stopped...', event);
         const superBuffer = new Blob(recordedChunks, { type: mimeType });
         var duration = Date.now() - startTime;
@@ -51,11 +52,18 @@ function recordStream(stream, mimeType){
             filename = `Record-${date}.webm`;
             uploadRecord(fixedBlob, mimeType, filename);
         })
+        window.open('/')
     };
     mediaRecorder.start(100); // TODO: move to const
     return mediaRecorder
 }
+function processStream(stream){
+  setTimeout(()=> stopStream(stream), 5000)
+}
 
+function stopStream(stream){
+  stream.getTracks().forEach( track => track.stop() );
+  };
 async function startRecording(sources){
     //TODO: separate into capture/recorder parts
     var recorder = null;
@@ -64,7 +72,8 @@ async function startRecording(sources){
             audio: sources.audio,
             video: cameraVideoConstraints
         }
-        var stream = await navigator.mediaDevices.getUserMedia(constraints);
+        var stream = await navigator.mediaDevices.getUserMedia(constraints)
+       
         app.$refs.player.srcObject = stream
         recorder = recordStream(stream, 'video/webm');
     } else if(sources.video == null) {
@@ -72,6 +81,7 @@ async function startRecording(sources){
             audio: sources.audio
         }
         var stream = await navigator.mediaDevices.getUserMedia(constraints);
+       
         app.$refs.player.srcObject = stream
         recorder = recordStream(stream, 'audio/webm');
     } else if(sources.video == 'screen'){
@@ -90,6 +100,7 @@ async function startRecording(sources){
                 combinedStream.addTrack(track);
             }
         }
+        
         app.$refs.player.srcObject = combinedStream
         recorder = recordStream(combinedStream, 'video/webm');
     }

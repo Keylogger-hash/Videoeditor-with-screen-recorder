@@ -47,6 +47,12 @@
                                 Clips
                             </label>
                         </div>
+                        <div class='dropdown-item'>
+                            <label class='checkbox'>
+                                <input type='checkbox' value='records' v-model='showTypes' />
+                                Records
+                            </label>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -58,6 +64,7 @@
                 <th>Type</th>
                 <th>Description</th>
                 <th>Status</th>
+                <th>Date</th>
                 <th>Actions</th>
             </tr>
         </thead>
@@ -69,10 +76,19 @@
                 <span class='tag' v-bind:class='{ "is-danger": item.status == "FAILED", "is-success": item.status == "COMPLETED", "is-warning": item.status == "INACTIVE" }'>{{ item.status }}</span>
             </td>
             <td>
+                <div v-if="item.status=='COMPLETED'">
+                    <span>{{item.task_end}}</span>
+                </div>
+                <div v-else>
+                    <span>{{ item.task_begin }}</span>
+                </div>
+            </td>
+            <td>
                 <div  class='buttons has-addons are-small'>
+                    <a :href='"/files/uploads/"+item.filename' download class='button'>Download</a>
                     <a :href='"/edit?video=" + item.id' class='button'>Edit</a>
                     <a :href='"/play/download/"+item.filename_view' class='button'>View</a>
-                    <button class='button is-danger' v-on:click='deleteVideo(item.id)'>Remove</button>
+                    <button class='button is-danger' v-on:click='deleteVideo(item.title,item.id)'>Remove</button>
                 </div>
             </td>
         </tr>
@@ -85,8 +101,17 @@
                 <div class='tag' v-bind:class='{ "is-danger": item.status == "FAILED", "is-success": item.status == "COMPLETED", "is-warning": item.status == "INACTIVE" }'>{{ item.status }}</div>
             </td>
             <td>
+                <div v-if="item.status=='COMPLETED'">
+                    <span>{{item.taskFinishedAt}}</span>
+                </div>
+                <div v-else>
+                    <span>{{ item.taskStartedAt }}</span>
+                </div>
+            </td>
+            <td>
                 <div class='buttons has-addons are-small'>
                     <!-- <a :href='"/edit?record=" + item.id' class='button'>Edit</a> -->
+                    <a :href='"/files/cuts/"+item.filename' download class='button'>Download</a>
                     <a :href='"/play/video/"+item.filename' class='button'>View</a>
                     <button class='button is-danger' v-on:click='deleteClip(item.filename)'>Remove</button>
                 </div>
@@ -94,16 +119,32 @@
         </tr>
         <!-- records -->
         <tr v-for='item in records' v-if='showTypes.includes("records")'>
-            <td><span class='tag is-danger'>Record</span></td>
+            <td>
+                <div v-if="item.type==='audio'">
+                    <span class='tag is-info'>Record(Audio)</span>
+                </div>
+                <div v-else>
+                    <span class='tag is-danger'>Record(Video)</span>
+                </div>
+            </td>
             <td>{{ item.title }}</td>
             <td>
                 <div class='tag' v-bind:class='{ "is-danger": item.status == "FAILED", "is-success": item.status == "COMPLETED", "is-warning": item.status == "INACTIVE" }'>{{ item.status }}</div>
             </td>
             <td>
+                <div v-if="item.status==='COMPLETED'">
+                    <span>{{ item.taskFinishedAt }}</span>
+                </div>
+                <div v-else>
+                    <span>{{ item.taskStartedAt }}</span>
+                </div>
+            </td>
+            <td>
                 <div class='buttons has-addons are-small'>
+                    <a :href='"/files/uploads/"+item.output_name' download class='button'>Download</a>
                     <a :href='"/edit?record=" + item.resultId' class='button'>Edit</a>
                     <a :href='"/play/record/"+item.output_name_view' class='button'>View</a>
-                    <button class='button is-danger' v-on:click='deleteRecord(item.resultId)'>Remove</button>
+                    <button class='button is-danger' v-on:click='deleteRecord(item.title, item.resultId)'>Remove</button>
                 </div>
             </td>
         </tr>
