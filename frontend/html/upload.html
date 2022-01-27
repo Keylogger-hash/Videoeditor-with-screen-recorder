@@ -64,6 +64,7 @@
                 <th>Type</th>
                 <th>Description</th>
                 <th>Status</th>
+                <th>Progress</th>
                 <th>Date</th>
                 <th>Actions</th>
             </tr>
@@ -74,6 +75,9 @@
             <td>{{ item.title }}</td>
             <td>
                 <span class='tag' v-bind:class='{ "is-danger": item.status == "FAILED", "is-success": item.status == "COMPLETED", "is-warning": item.status == "INACTIVE" }'>{{ item.status }}</span>
+            </td>
+            <td>
+                <span>100%</span>
             </td>
             <td>
                 <div v-if="item.status=='COMPLETED'">
@@ -100,6 +104,7 @@
             <td>
                 <div class='tag' v-bind:class='{ "is-danger": item.status == "FAILED", "is-success": item.status == "COMPLETED", "is-warning": item.status == "INACTIVE" }'>{{ item.status }}</div>
             </td>
+            <td>{{item.progress}}%</td>
             <td>
                 <div v-if="item.status=='COMPLETED'">
                     <span>{{item.taskFinishedAt}}</span>
@@ -130,6 +135,11 @@
             <td>{{ item.title }}</td>
             <td>
                 <div class='tag' v-bind:class='{ "is-danger": item.status == "FAILED", "is-success": item.status == "COMPLETED", "is-warning": item.status == "INACTIVE" }'>{{ item.status }}</div>
+            </td>
+            <td>
+                <div>
+                    <span>{{item.progress}}%</span>
+                </div>
             </td>
             <td>
                 <div v-if="item.status==='COMPLETED'">

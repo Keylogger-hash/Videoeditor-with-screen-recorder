@@ -67,7 +67,32 @@ function updateProgress(outputFilename){
 
 function updateVideoMeta(){
     var player = document.all.editorPlayer;
+    var sBrowser, sUsrAg = navigator.userAgent;
+    if (sUsrAg.indexOf("Firefox") > -1) {
+        sBrowser = "Mozilla Firefox";
+    } else if (sUsrAg.indexOf("SamsungBrowser") > -1) {
+        sBrowser = "Samsung Internet";
+    } else if (sUsrAg.indexOf("Opera") > -1 || sUsrAg.indexOf("OPR") > -1) {
+        sBrowser = "Opera";
+    } else if (sUsrAg.indexOf("Trident") > -1) {
+        sBrowser = "Microsoft Internet Explorer";
+    } else if (sUsrAg.indexOf("Edge") > -1) {
+        sBrowser = "Microsoft Edge (Legacy)";
+    } else if (sUsrAg.indexOf("Edg") > -1) {
+        sBrowser = "Microsoft Edge (Chromium)";
+    } else if (sUsrAg.indexOf("Chrome") > -1) {
+        sBrowser = "Google Chrome or Chromium";
+    } else if (sUsrAg.indexOf("Safari") > -1) {
+        sBrowser = "Apple Safari";
+    } else {
+        sBrowser = "unknown";
+    }
+    if (sBrowser == 'Mozilla Firefox' && model.typeVideo == 'record'){
+        player.playbackRate=0.75
+    }
     model.timeline.setDuration(Math.floor(player.duration * 10) / 10);
+    
+
     model.audioOnly = (player.src.indexOf('.mp3') != -1);
 }
 

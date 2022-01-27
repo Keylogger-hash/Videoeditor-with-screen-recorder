@@ -74,7 +74,8 @@ function main(){
             showTypes: ['sources', 'clips', 'records'],
             sources: [],
             clips: [],
-            records: []
+            records: [],
+            progress:{},
         },
         methods: {
             fetchSources: function(){
@@ -152,9 +153,9 @@ function main(){
                         }
                         this.fetchSources();
                     })
-                }
-                
-            }
+                }  
+            },
+            
         }
     });
     sourcesList.fetchSources();

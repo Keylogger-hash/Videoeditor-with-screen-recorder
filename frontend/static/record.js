@@ -49,6 +49,7 @@ function recordStream(stream, mimeType){
         ysFixWebmDuration(superBuffer, duration, function(fixedBlob){
             console.log('Foo?')
             var date = (new Date()).toISOString();
+            console.log(duration)
             filename = `Record-${date}.webm`;
             uploadRecord(fixedBlob, mimeType, filename);
         })
@@ -72,7 +73,7 @@ async function startRecording(sources){
             audio: sources.audio,
             video: cameraVideoConstraints
         }
-        var stream = await navigator.mediaDevices.getUserMedia(constraints)
+        var stream = await  navigator.mediaDevices.getUserMedia(constraints)
        
         app.$refs.player.srcObject = stream
         recorder = recordStream(stream, 'video/webm');
