@@ -75,9 +75,41 @@ function main(){
             sources: [],
             clips: [],
             records: [],
-            progress:{},
+            progress:0,
+            progressDone:true,
         },
+        
         methods: {
+            checkProgress: function(item){
+                if (item.status === 'COMPLETED'){
+                    this.progressDone=true
+                    return true
+                }
+                if (item.status==='WORKING'){
+                    //this.progress[item.resultId]=0
+                    this.progressDone=false
+                    this.updateProgres(item)           
+                    return false
+                }
+            },
+            updateProgres: function(item){
+                fetch('/api/records/' + item.resultId + '/info')
+                .then(r => r.json())
+                .then((data) => {
+                    if(data.success){
+                        if((data.result.status == 'QUEUED') || (data.result.status == 'WORKING') || (data.result.status == 'INACTIVE')){
+                            document.getElementById(`${item.resultId}`).textContent=Math.floor(data.result.progress)+'%'
+                            document.getElementById(`${item.title}`).textContent=data.result.status
+                            timeout=setTimeout(this.updateProgres.bind(this,item),1000)
+                            console.log(data.result.progress+"%")                     
+                        } else {
+                            document.getElementById(`${item.resultId}`).textContent = data.result.progress+'%'
+                            document.getElementById(`${item.title}`).textContent=data.result.status
+                            document.getElementById(`${item.title}`).className="tag is-success"
+                        }
+                    }
+                })
+            },
             fetchSources: function(){
                 fetch('/api/downloads/')
                 .then(r => r.json())

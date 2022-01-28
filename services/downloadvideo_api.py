@@ -3,7 +3,7 @@ import json
 import zmq
 import shutil
 from sqlalchemy import create_engine
-from sqlalchemy.sql import select
+from sqlalchemy.sql import select, desc
 from flask import Blueprint, current_app, request
 from database.datamodel import videos, download_videos
 import uuid
@@ -62,7 +62,7 @@ class DownloadVideoApi(object):
 @api.get('downloads/')
 def list_of_records():
     dbe = create_engine(current_app.config.get('DATABASE'))
-    result = dbe.execute(select([download_videos])).fetchall()
+    result = dbe.execute(select([download_videos]).order_by(desc(download_videos.c.task_end)))
     return {
         "success": True,
         "downloads": [

@@ -5,7 +5,7 @@ import json
 import zmq
 import typing
 from sqlalchemy import create_engine
-from sqlalchemy.sql import select
+from sqlalchemy.sql import select, desc
 from flask import Blueprint, current_app, request
 from database.datamodel import records
 import uuid
@@ -77,7 +77,7 @@ def get_record_progress(video_id):
         }
     return {
         "success": True,
-        'result': {
+        "result": {
             "id": video_id,
             "output_name": result['output_name'],
             "title": result["title"],
@@ -92,7 +92,7 @@ def get_record_progress(video_id):
 @api.get("/records/")
 def get_all_records():
     db = create_engine(current_app.config.get('DATABASE'))
-    result = db.execute(select([records]).order_by(records.c.title.asc())).fetchall()
+    result = db.execute(select([records]).order_by(records.c.title.desc())).fetchall()
     return {
         "success": True,
         "data":[{

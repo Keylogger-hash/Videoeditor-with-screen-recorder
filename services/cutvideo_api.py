@@ -6,7 +6,7 @@ import typing
 import functools
 from uuid import uuid4
 from sqlalchemy import create_engine
-from sqlalchemy.sql import select
+from sqlalchemy.sql import select, desc
 from flask import Blueprint, current_app, request
 from jsonschema import validate, ValidationError
 from database.datamodel import videos, records,download_videos as source_videos
@@ -142,7 +142,7 @@ def requires_db(callback):
 @api.get('/cuts/')
 @requires_db
 def get_cut_list(db):
-    result = db.execute(select([videos]).order_by(videos.c.output_filename.asc())).fetchall()
+    result = db.execute(select([videos]).order_by(desc(videos.c.task_begin)))
     return {
         'success': True,
         'cuts': [

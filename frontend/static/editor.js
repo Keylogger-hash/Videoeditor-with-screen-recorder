@@ -89,6 +89,8 @@ function updateVideoMeta(){
     }
     if (sBrowser == 'Mozilla Firefox' && model.typeVideo == 'record'){
         player.playbackRate=0.75
+    } else {
+        player.playbackRate=1.0
     }
     model.timeline.setDuration(Math.floor(player.duration * 10) / 10);
     

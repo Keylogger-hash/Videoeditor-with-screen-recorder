@@ -134,12 +134,16 @@
             </td>
             <td>{{ item.title }}</td>
             <td>
-                <div class='tag' v-bind:class='{ "is-danger": item.status == "FAILED", "is-success": item.status == "COMPLETED", "is-warning": item.status == "INACTIVE" }'>{{ item.status }}</div>
+                <span class='tag' v-bind:id="item.title" v-bind:class='{ "is-danger": item.status == "FAILED", "is-success": item.status == "COMPLETED", "is-warning": item.status == "INACTIVE" }'>{{ item.status }}</span>
             </td>
             <td>
-                <div>
+                <div v-if="checkProgress(item)">
                     <span>{{item.progress}}%</span>
                 </div>
+                <div v-else>
+                    <span v-bind:id="item.resultId">{{item.progress}}%</span>
+                </div>
+               
             </td>
             <td>
                 <div v-if="item.status==='COMPLETED'">
