@@ -25,6 +25,8 @@ function uploadRecord(blob, mimetype, filename){
         if((request.readyState == XMLHttpRequest.DONE) && (request.status == 200)){
             var data = JSON.parse(request.responseText);
             app.recordingDone(data.result.id);
+            window.location.replace('/')
+
         }
     };
     request.send(fd);
@@ -53,7 +55,6 @@ function recordStream(stream, mimeType){
             filename = `Record-${date}.webm`;
             uploadRecord(fixedBlob, mimeType, filename);
         })
-        window.open('/')
     };
     mediaRecorder.start(100); // TODO: move to const
     return mediaRecorder

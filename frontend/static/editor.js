@@ -67,31 +67,29 @@ function updateProgress(outputFilename){
 
 function updateVideoMeta(){
     var player = document.all.editorPlayer;
-    var sBrowser, sUsrAg = navigator.userAgent;
-    if (sUsrAg.indexOf("Firefox") > -1) {
-        sBrowser = "Mozilla Firefox";
-    } else if (sUsrAg.indexOf("SamsungBrowser") > -1) {
-        sBrowser = "Samsung Internet";
-    } else if (sUsrAg.indexOf("Opera") > -1 || sUsrAg.indexOf("OPR") > -1) {
-        sBrowser = "Opera";
-    } else if (sUsrAg.indexOf("Trident") > -1) {
-        sBrowser = "Microsoft Internet Explorer";
-    } else if (sUsrAg.indexOf("Edge") > -1) {
-        sBrowser = "Microsoft Edge (Legacy)";
-    } else if (sUsrAg.indexOf("Edg") > -1) {
-        sBrowser = "Microsoft Edge (Chromium)";
-    } else if (sUsrAg.indexOf("Chrome") > -1) {
-        sBrowser = "Google Chrome or Chromium";
-    } else if (sUsrAg.indexOf("Safari") > -1) {
-        sBrowser = "Apple Safari";
-    } else {
-        sBrowser = "unknown";
-    }
-    if (sBrowser == 'Mozilla Firefox' && model.typeVideo == 'record'){
-        player.playbackRate=0.75
-    } else {
-        player.playbackRate=1.0
-    }
+    // var sBrowser, sUsrAg = navigator.userAgent;
+    // if (sUsrAg.indexOf("Firefox") > -1) {
+    //     sBrowser = "Mozilla Firefox";
+    // } else if (sUsrAg.indexOf("SamsungBrowser") > -1) {
+    //     sBrowser = "Samsung Internet";
+    // } else if (sUsrAg.indexOf("Opera") > -1 || sUsrAg.indexOf("OPR") > -1) {
+    //     sBrowser = "Opera";
+    // } else if (sUsrAg.indexOf("Trident") > -1) {
+    //     sBrowser = "Microsoft Internet Explorer";
+    // } else if (sUsrAg.indexOf("Edge") > -1) {
+    //     sBrowser = "Microsoft Edge (Legacy)";
+    // } else if (sUsrAg.indexOf("Edg") > -1) {
+    //     sBrowser = "Microsoft Edge (Chromium)";
+    // } else if (sUsrAg.indexOf("Chrome") > -1) {
+    //     sBrowser = "Google Chrome or Chromium";
+    // } else if (sUsrAg.indexOf("Safari") > -1) {
+    //     sBrowser = "Apple Safari";
+    // } else {
+    //     sBrowser = "unknown";
+    // }
+    // if (sBrowser == 'Mozilla Firefox' && model.typeVideo == 'record'){
+    //     player.playbackRate=0.75
+    // } 
     model.timeline.setDuration(Math.floor(player.duration * 10) / 10);
     
 
@@ -113,7 +111,7 @@ function playerUpdate(){
 
 function playerSeeked(timeToSeek){
     var player = document.all.editorPlayer;
-    if(player.currentTime != timeToSeek){
+    if(Math.abs(player.currentTime - timeToSeek) > 0.1){
         player.currentTime = timeToSeek;
     } else {
         player.onseeked = null;
@@ -243,7 +241,7 @@ function main(){
     document.all.sourceLoadBtn.onclick = loadSelectedSource;
     document.all.sourceRefresh.onclick = model.fetchSources.bind(model);
     document.all.editorPlayer.onloadedmetadata = updateVideoMeta;
-    //document.all.editorPlayer.ontimeupdate = playerUpdate;
+    document.all.editorPlayer.ontimeupdate = playerUpdate;
     document.all.editorPlayer.onpause = function(){
         model.isPlaying = false;
         clearInterval(window.positionUpdateInterval);

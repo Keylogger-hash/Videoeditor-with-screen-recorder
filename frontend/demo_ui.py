@@ -26,8 +26,6 @@ def player_video_cuts(output_name):
     db = create_engine(database_url)
     result = db.execute(select([videos]).where(videos.c.output_filename == output_name)).fetchone()
     output_name='/files/cuts/'+output_name
-    print(request.headers.get('User-Agent'))
-
     if result is None:
         return abort(404)
     return render_template('player.html', output_name=output_name, title=result['description'])
