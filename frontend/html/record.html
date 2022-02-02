@@ -25,9 +25,11 @@
         </div>
         <br>
         <div>
-            <p>Email <input class="input" type = 'email' placeholder="Email" v-model="email"/></p>
-            <p>Filename <input class="input" type = 'text' placeholder="Filename" v-model="filename"/></p>
-            <button class="button" v-on:click="sendLink">Send link</button>
+            <p>* if you want to receive an email with a player link, enter the email it will be sent after the recording is stopped</p>
+            <br>
+            <p>Email <input type='email' class="input" placeholder="Email" v-model="email"/></p>
+            <p>Filename <input type='text' class="input" placeholder="Filename" v-model="filename"/></p>
+            <button class="button" v-on:click="setEmailInLocalStorage">Send link</button>
         </div>
         <br>
         <br>

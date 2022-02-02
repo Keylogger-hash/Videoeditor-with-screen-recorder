@@ -11,7 +11,7 @@ var cameraVideoConstraints = {
     }
 };
 var recordBaseURL='/files/uploads/'
-
+var needSendEmail = false
 function uploadRecord(blob, mimetype, filename){
     var fd = new FormData()
     if(mimetype == 'video/webm'){
@@ -24,6 +24,7 @@ function uploadRecord(blob, mimetype, filename){
     request.onreadystatechange = function(){
         if((request.readyState == XMLHttpRequest.DONE) && (request.status == 200)){
             var data = JSON.parse(request.responseText);
+            sendLinkPlayer(data.result.id)
             app.recordingDone(data.result.id);
             window.location.replace('/')
 
@@ -31,7 +32,34 @@ function uploadRecord(blob, mimetype, filename){
     };
     request.send(fd);
 }
-
+function sendLinkPlayer(record_id){
+    if (needSendEmail) {
+        email=localStorage.getItem("email")
+        filename=localStorage.getItem("filename")
+        data={
+            'email':email,
+            'filename':filename,
+            "record_id":record_id,
+        }
+        fetch('/send/email',{
+            method:'POST',
+            headers:{
+                'Content-Type':'application/json'
+            },
+            body:JSON.stringify(data)
+        })
+        .then(response=>response.json())
+        .then((response) => {
+            if (response.success) {
+                return            
+            } else {
+                alert("Email wasn't sent")
+            }
+        })
+    } else {
+        return
+    }
+}
 function recordStream(stream, mimeType){
     var recordedChunks = []
     var startTime = Date.now()
@@ -111,9 +139,12 @@ async function startRecording(sources){
 }
 
 function validateEmail(email){
-    return email.match(
-        /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
-      );
+    mailFormat = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/
+    if (email.match(mailFormat)) {
+        return true
+    } else {
+        return false
+    }
 }
 
 function main(){
@@ -170,11 +201,12 @@ function main(){
                 this.encodingDone = false;
                 this.watchProcessing(id);
             },
-            sendLink: function(){
+            setEmailInLocalStorage: function(){
                 email = this.email
                 link = this.playLink
                 filename = this.filename
                 validatedEmail = validateEmail(email)
+
                 if (!validatedEmail){
                     alert("Please input correct email")
                     return
@@ -193,22 +225,24 @@ function main(){
                 } else {
                     localStorage.setItem("email",email)
                     localStorage.setItem("filename",filename)
-                    fetch('/api/records/send/', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            email:email,
-                            filename: filename,
-                            link:link,
-                        })
-                    }).then(r => r.json())
-                    .then((response) => {
-                        if (response.success){
-                            alert("Email was sent")
-                        } else {
-                            alert("Email wasn't sent")
-                        }
-                    })
+                    needSendEmail = true
+                    alert('Email with link will be sent after recording')
+                    // fetch('/api/records/send/', {
+                    //     method: 'POST',
+                    //     headers: { 'Content-Type': 'application/json' },
+                    //     body: JSON.stringify({
+                    //         email:email,
+                    //         filename: filename,
+                    //         link:link,
+                    //     })
+                    // }).then(r => r.json())
+                    // .then((response) => {
+                    //     if (response.success){
+                    //         alert("Email was sent")
+                    //     } else {
+                    //         alert("Email wasn't sent")
+                    //     }
+                    // })
                 }
             },
             watchProcessing: function(id){
