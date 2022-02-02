@@ -29,6 +29,22 @@ services:
             main:
                 aliases:
                 - downloader_svc
+    email_service:
+      build:
+        context: .
+        dockerfile: email.Dockerfile
+      environment:
+        DATABASE: "postgresql://${DB_USER}:${DB_PASSWORD}@dbserver/${DB_NAME}"
+      depends_on:
+        - redis
+        - api
+        - database
+      command: celery -A email_service.celery_queue worker --logfile info
+      networks:
+        main:
+          aliases:
+            - email_svc
+
     transcoding_service:
         build:
             context: .
@@ -56,6 +72,13 @@ services:
             DATABASE: "postgresql://${DB_USER}:${DB_PASSWORD}@dbserver/${DB_NAME}"
         networks:
             main:
+    redis:
+      image: redis
+      restart: always
+      container_name: 'demo_app_redis'
+      command: redis-server
+      ports:
+        - '6379:6379'
 
     database:
         image: postgres:10.18

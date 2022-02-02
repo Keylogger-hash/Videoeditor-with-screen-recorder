@@ -14,6 +14,7 @@ COPY services ./services
 COPY processing_service ./processing_service
 COPY download_service ./download_service
 COPY encoding_service ./encoding_service
+COPY email_service ./email_service
 COPY settings.docker.py ./settings.py
 COPY routes.py ./
 
