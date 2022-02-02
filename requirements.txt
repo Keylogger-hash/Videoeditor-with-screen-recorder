@@ -5,3 +5,6 @@ yt_dlp
 sqlalchemy
 psycopg2
 zmq
+flask-mail
+celery
+redis
