@@ -74,9 +74,42 @@ function main(){
             showTypes: ['sources', 'clips', 'records'],
             sources: [],
             clips: [],
-            records: []
+            records: [],
+            progress:0,
+            progressDone:true,
         },
+        
         methods: {
+            checkProgress: function(item){
+                if (item.status === 'COMPLETED'){
+                    this.progressDone=true
+                    return true
+                }
+                if (item.status==='WORKING'){
+                    //this.progress[item.resultId]=0
+                    this.progressDone=false
+                    this.updateProgres(item)           
+                    return false
+                }
+            },
+            updateProgres: function(item){
+                fetch('/api/records/' + item.resultId + '/info')
+                .then(r => r.json())
+                .then((data) => {
+                    if(data.success){
+                        if((data.result.status == 'QUEUED') || (data.result.status == 'WORKING') || (data.result.status == 'INACTIVE')){
+                            document.getElementById(`${item.resultId}`).textContent=Math.floor(data.result.progress)+'%'
+                            document.getElementById(`${item.title}`).textContent=data.result.status
+                            timeout=setTimeout(this.updateProgres.bind(this,item),1000)
+                            console.log(data.result.progress+"%")                     
+                        } else {
+                            document.getElementById(`${item.resultId}`).textContent = data.result.progress+'%'
+                            document.getElementById(`${item.title}`).textContent=data.result.status
+                            document.getElementById(`${item.title}`).className="tag is-success"
+                        }
+                    }
+                })
+            },
             fetchSources: function(){
                 fetch('/api/downloads/')
                 .then(r => r.json())
@@ -114,33 +147,47 @@ function main(){
                 console.log(filename)
                 filename = filename.split("/").join("_")
             },
-            deleteVideo: function(id){
-                fetch('/api/downloads/' + id + '/cancel', { method: 'delete' })
-                .then(r => r.json())
-                .then(() => {
-                    this.fetchSources();
-                })
+            deleteVideo: function(title,id){
+                message = `Are you sure to delete video:\n${title}?`
+                result = window.confirm(message)
+                if (result) {
+                    fetch('/api/downloads/' + id + '/cancel', { method: 'delete' })
+                    .then(r => r.json())
+                    .then(() => {
+                        this.fetchSources();
+                    })
+                }
             },
-            deleteRecord: function(id){
-                fetch('/api/records/'+id+'/',{method:'delete'})
-                .then(r=> r.json())
-                .then(()=>{
-                    this.fetchSources();
-                })
+            deleteRecord: function(title, id){
+                message = `Are you sure to delete record:\n${title}?`
+                result = window.confirm(message);
+                if (result) {
+                    fetch('/api/records/'+id+'/',{method:'delete'})
+                    .then(r=> r.json())
+                    .then(()=>{
+                        this.fetchSources();
+                    })
+                }
+                
             },
             deleteClip: function(id){
-                fetch('/api/cuts/' + id, {
-                    method: 'DELETE'
-                })
-                .then(r => r.json())
-                .then((response) => {
-                    if(!response.success){
-                        console.warn('Failed to delete video ' + id);
-                        return;
-                    }
-                    this.fetchSources();
-                })
-            }
+                message = `Are you sure to delete clip:\n${id}?`
+                result = window.confirm(message)
+                if (result) {
+                    fetch('/api/cuts/' + id, {
+                        method: 'DELETE'
+                    })
+                    .then(r => r.json())
+                    .then((response) => {
+                        if(!response.success){
+                            console.warn('Failed to delete video ' + id);
+                            return;
+                        }
+                        this.fetchSources();
+                    })
+                }  
+            },
+            
         }
     });
     sourcesList.fetchSources();

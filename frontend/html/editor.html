@@ -61,6 +61,7 @@ div {
 <script src='/static/components.js'></script>
 <script src='/static/timeline.js'></script>
 <script src='/static/editor.js'></script>
+
 <!-- component templates -->
 <script type='text/template' id='base-modal-template'>
     <div class='modal is-active' v-show='isShown'>
@@ -159,7 +160,7 @@ div {
                 </div>
             </div>
             <div class='player-area'>
-                <video id='editorPlayer' ref='player'></video>
+                <video id='editorPlayer' ref='player' ></video>
             </div>
             <div class='controls-area has-background-light'>
                 <div class='controls-group'>
@@ -311,4 +312,5 @@ div {
                 ></video-cut-form>
         </bulma-modal>
     </div>
+    
 </body>

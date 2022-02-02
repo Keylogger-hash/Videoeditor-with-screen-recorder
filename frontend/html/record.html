@@ -23,6 +23,16 @@
 
             <button class="button is-danger" v-on:click="toggleRecording">{{ recordButtonCaption }}</button>
         </div>
+        <br>
+        <div>
+            <p>* if you want to receive an email with a player link, enter the email it will be sent after the recording is stopped</p>
+            <br>
+            <p>Email <input type='email' class="input" placeholder="Email" v-model="email"/></p>
+            <p>Filename <input type='text' class="input" placeholder="Filename" v-model="filename"/></p>
+            <button class="button" v-on:click="setEmailInLocalStorage">Send link</button>
+        </div>
+        <br>
+        <br>
         <div v-show='isRecording'>
             <video ref='player' controls="hidden" autoplay muted></video>
         </div>
@@ -34,6 +44,7 @@
                 </div>
             </div>
             <a v-bind:href='downloadLink' v-bind:download='outputName' class='button '>Download result video</a>
+            
         </div>
         <div class='block' v-show='!encodingDone'>
             Record processing progress

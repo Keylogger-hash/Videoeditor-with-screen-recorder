@@ -1,6 +1,6 @@
 from sqlalchemy import create_engine
 from sqlalchemy.sql import select
-from flask import Blueprint, abort, current_app, render_template, url_for, send_from_directory
+from flask import Blueprint, abort, current_app, render_template, url_for, send_from_directory, request
 
 from database.datamodel import videos,records,download_videos
 
@@ -39,7 +39,7 @@ def player_record(output_name):
     output_name="/files/uploads/"+output_name
     if result is None:
         return abort(404)
-    return render_template('player.html', output_name=output_name, title=result['source_name'])
+    return render_template('player.html',output_name=output_name, title=result['source_name'])
 
 @demo_ui.get('/play/download/<output_name>/')
 def player_download(output_name):
@@ -48,6 +48,8 @@ def player_download(output_name):
     output_name="/".join(output_name.split("_"))
     result = db.execute(select([download_videos]).where(download_videos.c.filename == output_name)).fetchone()
     output_name='/files/uploads/'+output_name
+    print(request.headers.get('User-Agent'))
+
     if result is None:
         return abort(404)
     return render_template('player.html', output_name=output_name, title=result['title'])

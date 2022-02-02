@@ -10,8 +10,8 @@ var cameraVideoConstraints = {
         max: 1080
     }
 };
-var recordBaseURL='/files/upload/'
-
+var recordBaseURL='/files/uploads/'
+var needSendEmail = false
 function uploadRecord(blob, mimetype, filename){
     var fd = new FormData()
     if(mimetype == 'video/webm'){
@@ -24,16 +24,45 @@ function uploadRecord(blob, mimetype, filename){
     request.onreadystatechange = function(){
         if((request.readyState == XMLHttpRequest.DONE) && (request.status == 200)){
             var data = JSON.parse(request.responseText);
+            sendLinkPlayer(data.result.id)
             app.recordingDone(data.result.id);
+            window.location.replace('/')
+
         }
     };
     request.send(fd);
 }
-
+function sendLinkPlayer(record_id){
+    if (needSendEmail) {
+        email=localStorage.getItem("email")
+        filename=localStorage.getItem("filename")
+        data={
+            'email':email,
+            'filename':filename,
+            "record_id":record_id,
+        }
+        fetch('/send/email',{
+            method:'POST',
+            headers:{
+                'Content-Type':'application/json'
+            },
+            body:JSON.stringify(data)
+        })
+        .then(response=>response.json())
+        .then((response) => {
+            if (response.success) {
+                return            
+            } else {
+                alert("Email wasn't sent")
+            }
+        })
+    } else {
+        return
+    }
+}
 function recordStream(stream, mimeType){
     var recordedChunks = []
     var startTime = Date.now()
-    var stopped = false;
 
     var mediaRecorder = new MediaRecorder(stream, { mimeType: mimeType });
     mediaRecorder.ondataavailable = function(event){
@@ -42,12 +71,15 @@ function recordStream(stream, mimeType){
         }
     };
     mediaRecorder.onstop = function(event){
+        stream = mediaRecorder.stream
+        stream.getTracks().forEach(track=>track.stop())
         console.log('Recording stopped...', event);
         const superBuffer = new Blob(recordedChunks, { type: mimeType });
         var duration = Date.now() - startTime;
         ysFixWebmDuration(superBuffer, duration, function(fixedBlob){
             console.log('Foo?')
             var date = (new Date()).toISOString();
+            console.log(duration)
             filename = `Record-${date}.webm`;
             uploadRecord(fixedBlob, mimeType, filename);
         })
@@ -55,7 +87,13 @@ function recordStream(stream, mimeType){
     mediaRecorder.start(100); // TODO: move to const
     return mediaRecorder
 }
+function processStream(stream){
+  setTimeout(()=> stopStream(stream), 5000)
+}
 
+function stopStream(stream){
+  stream.getTracks().forEach( track => track.stop() );
+  };
 async function startRecording(sources){
     //TODO: separate into capture/recorder parts
     var recorder = null;
@@ -64,7 +102,8 @@ async function startRecording(sources){
             audio: sources.audio,
             video: cameraVideoConstraints
         }
-        var stream = await navigator.mediaDevices.getUserMedia(constraints);
+        var stream = await  navigator.mediaDevices.getUserMedia(constraints)
+       
         app.$refs.player.srcObject = stream
         recorder = recordStream(stream, 'video/webm');
     } else if(sources.video == null) {
@@ -72,6 +111,7 @@ async function startRecording(sources){
             audio: sources.audio
         }
         var stream = await navigator.mediaDevices.getUserMedia(constraints);
+       
         app.$refs.player.srcObject = stream
         recorder = recordStream(stream, 'audio/webm');
     } else if(sources.video == 'screen'){
@@ -90,11 +130,21 @@ async function startRecording(sources){
                 combinedStream.addTrack(track);
             }
         }
+        
         app.$refs.player.srcObject = combinedStream
         recorder = recordStream(combinedStream, 'video/webm');
     }
     app.recorder = recorder;
     app.isRecording = true;
+}
+
+function validateEmail(email){
+    mailFormat = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/
+    if (email.match(mailFormat)) {
+        return true
+    } else {
+        return false
+    }
 }
 
 function main(){
@@ -108,7 +158,10 @@ function main(){
             encodingProgress: 0,
             encodingDone: true,
             isShowButton: false,
-            outputName: ""
+            outputName: "",
+            playLink: "",
+            email:"",
+            filename:""
         },
         computed: {
             recordButtonCaption: function(){
@@ -117,7 +170,8 @@ function main(){
             shareLink: function(){
                 outputNameSplit = this.outputName
                 outputNameSplit = outputNameSplit.split("/").join("_")
-                return location.protocol + '//' + location.host + '/play/record/' + outputNameSplit;
+                this.playLink = location.protocol + '//' + location.host + '/play/record/' + outputNameSplit;
+                return this.playLink
             },
             downloadLink: function(){
                 return  recordBaseURL+this.outputName
@@ -146,6 +200,50 @@ function main(){
             recordingDone: function(id){
                 this.encodingDone = false;
                 this.watchProcessing(id);
+            },
+            setEmailInLocalStorage: function(){
+                email = this.email
+                link = this.playLink
+                filename = this.filename
+                validatedEmail = validateEmail(email)
+
+                if (!validatedEmail){
+                    alert("Please input correct email")
+                    return
+                }
+                if (!email && !filename){
+                    alert("Please input email and filename")
+                    return
+                } 
+                if (!email && filename){
+                    alert ("Please input email")
+                    return
+                }
+                if (!filename && email) {
+                    alert("Please input filename")
+                    return
+                } else {
+                    localStorage.setItem("email",email)
+                    localStorage.setItem("filename",filename)
+                    needSendEmail = true
+                    alert('Email with link will be sent after recording')
+                    // fetch('/api/records/send/', {
+                    //     method: 'POST',
+                    //     headers: { 'Content-Type': 'application/json' },
+                    //     body: JSON.stringify({
+                    //         email:email,
+                    //         filename: filename,
+                    //         link:link,
+                    //     })
+                    // }).then(r => r.json())
+                    // .then((response) => {
+                    //     if (response.success){
+                    //         alert("Email was sent")
+                    //     } else {
+                    //         alert("Email wasn't sent")
+                    //     }
+                    // })
+                }
             },
             watchProcessing: function(id){
                 fetch('/api/records/' + id + '/info')

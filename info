@@ -1,0 +1,81 @@
+[2022-02-01 11:42:52,031: WARNING/MainProcess] /home/pavel1/miniconda3/envs/sven-editor/lib/python3.9/site-packages/celery/app/utils.py:204: CDeprecationWarning: 
+    The 'CELERY_RESULT_BACKEND' setting is deprecated and scheduled for removal in
+    version 6.0.0. Use the result_backend instead
+
+  deprecated.warn(description=f'The {setting!r} setting',
+
+[2022-02-01 11:42:52,031: WARNING/MainProcess] Please run `celery upgrade settings path/to/settings.py` to avoid these warnings and to allow a smoother upgrade to Celery 6.0.
+[2022-02-02 11:48:09,408: WARNING/MainProcess] /home/pavel1/miniconda3/envs/sven-editor/lib/python3.9/site-packages/celery/app/utils.py:204: CDeprecationWarning: 
+    The 'CELERY_RESULT_BACKEND' setting is deprecated and scheduled for removal in
+    version 6.0.0. Use the result_backend instead
+
+  deprecated.warn(description=f'The {setting!r} setting',
+
+[2022-02-02 11:48:09,409: WARNING/MainProcess] Please run `celery upgrade settings path/to/settings.py` to avoid these warnings and to allow a smoother upgrade to Celery 6.0.
+[2022-02-02 11:53:04,957: WARNING/MainProcess] /home/pavel1/miniconda3/envs/sven-editor/lib/python3.9/site-packages/celery/app/utils.py:204: CDeprecationWarning: 
+    The 'CELERY_RESULT_BACKEND' setting is deprecated and scheduled for removal in
+    version 6.0.0. Use the result_backend instead
+
+  deprecated.warn(description=f'The {setting!r} setting',
+
+[2022-02-02 11:53:04,957: WARNING/MainProcess] Please run `celery upgrade settings path/to/settings.py` to avoid these warnings and to allow a smoother upgrade to Celery 6.0.
+[2022-02-02 11:53:29,696: WARNING/MainProcess] /home/pavel1/miniconda3/envs/sven-editor/lib/python3.9/site-packages/celery/app/utils.py:204: CDeprecationWarning: 
+    The 'CELERY_RESULT_BACKEND' setting is deprecated and scheduled for removal in
+    version 6.0.0. Use the result_backend instead
+
+  deprecated.warn(description=f'The {setting!r} setting',
+
+[2022-02-02 11:53:29,696: WARNING/MainProcess] Please run `celery upgrade settings path/to/settings.py` to avoid these warnings and to allow a smoother upgrade to Celery 6.0.
+[2022-02-02 12:04:15,083: WARNING/MainProcess] /home/pavel1/miniconda3/envs/sven-editor/lib/python3.9/site-packages/celery/app/utils.py:204: CDeprecationWarning: 
+    The 'CELERY_RESULT_BACKEND' setting is deprecated and scheduled for removal in
+    version 6.0.0. Use the result_backend instead
+
+  deprecated.warn(description=f'The {setting!r} setting',
+
+[2022-02-02 12:04:15,083: WARNING/MainProcess] Please run `celery upgrade settings path/to/settings.py` to avoid these warnings and to allow a smoother upgrade to Celery 6.0.
+[2022-02-02 12:14:23,181: WARNING/MainProcess] /home/pavel1/miniconda3/envs/sven-editor/lib/python3.9/site-packages/celery/app/utils.py:204: CDeprecationWarning: 
+    The 'CELERY_RESULT_BACKEND' setting is deprecated and scheduled for removal in
+    version 6.0.0. Use the result_backend instead
+
+  deprecated.warn(description=f'The {setting!r} setting',
+
+[2022-02-02 12:14:23,181: WARNING/MainProcess] Please run `celery upgrade settings path/to/settings.py` to avoid these warnings and to allow a smoother upgrade to Celery 6.0.
+[2022-02-02 13:01:01,056: WARNING/MainProcess] /home/pavel1/miniconda3/envs/sven-editor/lib/python3.9/site-packages/celery/app/utils.py:204: CDeprecationWarning: 
+    The 'CELERY_RESULT_BACKEND' setting is deprecated and scheduled for removal in
+    version 6.0.0. Use the result_backend instead
+
+  deprecated.warn(description=f'The {setting!r} setting',
+
+[2022-02-02 13:01:01,056: WARNING/MainProcess] Please run `celery upgrade settings path/to/settings.py` to avoid these warnings and to allow a smoother upgrade to Celery 6.0.
+[2022-02-02 13:01:31,423: ERROR/ForkPoolWorker-7] Task email_service.celery_queue.send_async_email[b867de7e-283e-4991-93bd-683b20072da8] raised unexpected: SMTPServerDisconnected('please run connect() first')
+Traceback (most recent call last):
+  File "/home/pavel1/miniconda3/envs/sven-editor/lib/python3.9/site-packages/celery/app/trace.py", line 451, in trace_task
+    R = retval = fun(*args, **kwargs)
+  File "/home/pavel1/sven_editor/email_service/celery_queue.py", line 18, in __call__
+    return self.run(*args, **kwargs)
+  File "/home/pavel1/sven_editor/email_service/celery_queue.py", line 43, in send_async_email
+    mail.send(message=msg)
+  File "/home/pavel1/miniconda3/envs/sven-editor/lib/python3.9/site-packages/flask_mail.py", line 491, in send
+    with self.connect() as connection:
+  File "/home/pavel1/miniconda3/envs/sven-editor/lib/python3.9/site-packages/flask_mail.py", line 144, in __enter__
+    self.host = self.configure_host()
+  File "/home/pavel1/miniconda3/envs/sven-editor/lib/python3.9/site-packages/flask_mail.py", line 163, in configure_host
+    host.starttls()
+  File "/home/pavel1/miniconda3/envs/sven-editor/lib/python3.9/smtplib.py", line 769, in starttls
+    self.ehlo_or_helo_if_needed()
+  File "/home/pavel1/miniconda3/envs/sven-editor/lib/python3.9/smtplib.py", line 611, in ehlo_or_helo_if_needed
+    if not (200 <= self.ehlo()[0] <= 299):
+  File "/home/pavel1/miniconda3/envs/sven-editor/lib/python3.9/smtplib.py", line 451, in ehlo
+    self.putcmd(self.ehlo_msg, name or self.local_hostname)
+  File "/home/pavel1/miniconda3/envs/sven-editor/lib/python3.9/smtplib.py", line 378, in putcmd
+    self.send(f'{s}{CRLF}')
+  File "/home/pavel1/miniconda3/envs/sven-editor/lib/python3.9/smtplib.py", line 365, in send
+    raise SMTPServerDisconnected('please run connect() first')
+smtplib.SMTPServerDisconnected: please run connect() first
+[2022-02-02 13:32:22,859: WARNING/MainProcess] /home/pavel1/miniconda3/envs/sven-editor/lib/python3.9/site-packages/celery/app/utils.py:204: CDeprecationWarning: 
+    The 'CELERY_RESULT_BACKEND' setting is deprecated and scheduled for removal in
+    version 6.0.0. Use the result_backend instead
+
+  deprecated.warn(description=f'The {setting!r} setting',
+
+[2022-02-02 13:32:22,860: WARNING/MainProcess] Please run `celery upgrade settings path/to/settings.py` to avoid these warnings and to allow a smoother upgrade to Celery 6.0.

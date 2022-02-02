@@ -6,3 +6,6 @@ sqlalchemy
 psycopg2-binary
 zmq
 requests
+flask-mail
+celery
+redis
