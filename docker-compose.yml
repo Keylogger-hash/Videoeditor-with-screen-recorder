@@ -75,11 +75,13 @@ services:
     redis:
       image: redis
       restart: always
-      container_name: 'demo_app_redis'
       command: redis-server
       ports:
         - '6379:6379'
-
+      networks:
+        main:
+          aliases:
+            - redis
     database:
         image: postgres:10.18
         environment:

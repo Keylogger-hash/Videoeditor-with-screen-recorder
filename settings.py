@@ -13,15 +13,16 @@ YOUTUBE_DL_EXECUTABLE = '/usr/local/bin/yt-dlp'
 
 # email
 MAIL_SERVER=''
-MAIL_PORT=0
+MAIL_PORT=587
 MAIL_USERNAME=''
 MAIL_PASSWORD=''
 MAIL_USE_TLS=True
 MAIL_USE_SSL=False
 
 # celery
-CELERY_BROKER_URL='redis://localhost:6379',
-CELERY_RESULT_BACKEND='redis://localhost:6379'
+CELERY_BROKER_URL='redis://redis:6379/0',
+CELERY_RESULT_BACKEND='redis://redis:6379/0'
+
 
 # EMAIL_HOST = 'smtp.yandex.ru'
 # EMAIL_PORT = 587
