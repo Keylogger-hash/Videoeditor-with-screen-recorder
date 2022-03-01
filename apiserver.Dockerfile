@@ -18,4 +18,4 @@ COPY email_service ./email_service
 COPY settings.docker.py ./settings.py
 COPY routes.py ./
 
-ENTRYPOINT ["/usr/local/bin/gunicorn", "-b", "0.0.0.0:80", "-w", "4", "--access-logfile", "-", "routes:app"]
+ENTRYPOINT ["/usr/local/bin/gunicorn", "-b", "0.0.0.0:4440", "-w", "4", "--access-logfile", "-", "routes:app"]

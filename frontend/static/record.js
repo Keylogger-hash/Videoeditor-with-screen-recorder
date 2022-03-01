@@ -160,7 +160,7 @@ function main(){
             isShowButton: false,
             outputName: "",
             playLink: "",
-            email:"",
+            email: "",
             filename:""
         },
         computed: {
@@ -176,6 +176,10 @@ function main(){
             downloadLink: function(){
                 return  recordBaseURL+this.outputName
             }
+        },
+        created() {
+            this.email = localStorage.getItem("email") ?? "";
+            this.filename = localStorage.getItem("filename") ?? "";
         },
         methods: {
             toggleCamera: function(){
