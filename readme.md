@@ -5,9 +5,9 @@ https://recording4u.com
 
 ![Запись экрана и веб-камеры](Screenshot_2.png)
 
-![Скачивание видео с youtube] (Screenshot_3.png)
+![Скачивание видео с youtube](Screenshot_3.png)
 
-![Редактирования видео] (Screenshot_4.png)
+![Редактирования видео](Screenshot_4.png)
 
 # Configuration
 
