@@ -1,17 +1,13 @@
 # Site
 https://recording4u.com
 
-![Сайт]
-https://github.com/Keylogger-hash/Videoeditor-with-screen-recorder/raw/master/Screenshot_1.png
+![Сайт](Screenshot_1.png)
 
-![Запись экрана и веб-камеры]
-https://github.com/Keylogger-hash/Videoeditor-with-screen-recorder/raw/master/Screenshot_2.png
+![Запись экрана и веб-камеры](Screenshot_2.png)
 
-![Скачивание видео с youtube]
-https://github.com/Keylogger-hash/Videoeditor-with-screen-recorder/raw/master/Screenshot_3.png
+![Скачивание видео с youtube] (Screenshot_3.png)
 
-![Редактирования видео]
-https://github.com/Keylogger-hash/Videoeditor-with-screen-recorder/raw/master/Screenshot_4.png
+![Редактирования видео] (Screenshot_4.png)
 
 # Configuration
 
